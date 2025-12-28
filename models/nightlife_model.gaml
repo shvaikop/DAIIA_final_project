@@ -20,6 +20,8 @@ global {
     int music_guests_count <- 0;
     int vegan_guests_count <- 0;
     
+    list<PlaceBase> ALL_PLACES;
+    
     // ---- COLOR PALETTE ----
     rgb COLOR_BAR        <- rgb(255, 140, 0);    // Dark Orange
 	rgb COLOR_CONCERT    <- rgb(138, 43, 226);   // Blue Violet / Purple
@@ -44,7 +46,7 @@ global {
 	int LOG_LEVEL_INFO <- 1;
 	int LOG_LEVEL_WARNING <- 2;
 
-	int min_log_level <- LOG_LEVEL_DEBUG;
+	int min_log_level <- LOG_LEVEL_INFO;
 	
 	int guestIdGenerator <- 0;
 	
@@ -74,6 +76,8 @@ global {
         create Club {
             location <- {80, 20};
         }
+        
+        ALL_PLACES <- (Bar + Concert + Cafe + Restaurant + Club);
 
         // ===== GUESTS (example) =====
         // Party guests
@@ -142,6 +146,7 @@ species PlaceBase {
 	float social_pressure;
 	
 	int min_length_stay;	// min number of cycles a guest has to stay at a place
+	int arrival_radius;
 	
 	aspect base {
         draw square(15) color: COLOR_DEFAULT border: COLOR_BORDER;
@@ -155,6 +160,7 @@ species Bar parent: PlaceBase {
         noise <- 0.7;
         social_pressure <- 0.6;
         min_length_stay <- 10;
+        arrival_radius <- 8;
     }
     
     aspect base {
@@ -173,6 +179,7 @@ species Concert parent: PlaceBase {
         noise <- 0.9;
         social_pressure <- 0.8;
         min_length_stay <- 50;
+        arrival_radius <- 15;
     }
     
     aspect base {
@@ -191,6 +198,7 @@ species Cafe parent: PlaceBase {
         noise <- 0.2;
         social_pressure <- 0.3;
         min_length_stay <- 10;
+        arrival_radius <- 5;
     }
     
     aspect base {
@@ -209,6 +217,7 @@ species Restaurant parent: PlaceBase {
         noise <- 0.3;
         social_pressure <- 0.4;
         min_length_stay <- 15;
+        arrival_radius <- 9;
     }
     
     aspect base {
@@ -227,6 +236,7 @@ species Club parent: PlaceBase {
         noise <- 0.85;
         social_pressure <- 0.9;
         min_length_stay <- 20;
+        arrival_radius <- 13;
     }
     
     aspect base {
@@ -293,6 +303,13 @@ species GuestBase skills: [moving, fipa]  {
 	int HELLO_COOLDOWN  <- 20;      // steps between hellos
 	// The radius to consider
 	float COMMUNICATION_RADIUS  <- 35.0;
+	
+	// variables related to choosing and going to locations
+	int num_cycles_to_wander;
+	int leave_place_cycle <- nil;	// cycle number when agent can leave the current place
+	int last_in_place_cycle <- 0;	// cycle number when agent was last in a place
+	float choose_place_probability;	// probability of choosing to go to a place instead of keeping on wandering around
+	float leave_place_probability <- 0.3;
     
     PlaceBase current_place <- nil;
     
@@ -303,6 +320,51 @@ species GuestBase skills: [moving, fipa]  {
     // Guests wander around randomly if they have no specific place to go to
     reflex wander_around when: current_place = nil {
     	do wander;
+    }
+    
+    reflex choose_place when: current_place = nil {
+    	if (cycle < last_in_place_cycle + num_cycles_to_wander) {
+    		return;
+    	}
+		if (rnd(0.0, 0.1) <= choose_place_probability) {
+			// choose integer 0–4
+	   		int idx <- rnd(0, 4);
+
+			// pick that place instance
+			current_place <- ALL_PLACES[idx];
+		    do log(LOG_LEVEL_WARNING, guestId,
+		    	"Agent " + guestId + " chose a place " + current_place.kind
+		    );
+		}
+		else {
+			do log(LOG_LEVEL_WARNING, guestId, "Agent " + guestId + " did not choose a place");
+		}
+    }
+        
+    reflex go_or_stay_or_leave_place when: current_place != nil {
+    	// distance to target place
+    	float d <- location distance_to current_place.location;
+    	
+    	// ---- NOT YET AT PLACE → MOVE ----
+	    if (d > current_place.arrival_radius) {
+	        do goto target: current_place.location;
+	    }
+	    // ---- AT THE PLACE ----
+	    else {	// at the place so just move around
+	    	do wander;
+	    	if (leave_place_cycle = nil) {
+	    		leave_place_cycle <- cycle + current_place.min_length_stay;
+	    	}
+	    	if (cycle > leave_place_cycle and rnd(0.0, 1.0) <= leave_place_probability) {
+	    		// Leave place
+	    		do log(LOG_LEVEL_WARNING, guestId,
+	    			"Guest " + guestId + " is leaving a place " + current_place.kind
+	    		);
+	    		last_in_place_cycle <- cycle;
+	    		leave_place_cycle <- nil;
+	    		current_place <- nil;
+	    	}
+	    } 
     }
    	
    	// An action to log an event to the conosole
@@ -429,6 +491,9 @@ species PartyGuest parent: GuestBase {
 		// PartyGuest says hi often and it is not a big deal for them
         hello_agree_happiness_delta <- 0.05;
         hello_refuse_happiness_delta <- 0.05;
+        
+        num_cycles_to_wander <- 5;
+		choose_place_probability <- 0.5;
     }
     
     aspect base {
@@ -488,6 +553,9 @@ species GuestIntrovert parent: GuestBase {
         // If an introvert says hi then the reply affects their happiness a lot
         hello_agree_happiness_delta <- 0.2;
         hello_refuse_happiness_delta <- 0.2;
+        
+        num_cycles_to_wander <- 25;
+		choose_place_probability <- 0.3;
     }
     
     aspect base {
@@ -545,6 +613,9 @@ species GuestMusicFan parent: GuestBase {
         // A music fan is not much affected by replies to hello
         hello_agree_happiness_delta <- 0.05;
         hello_refuse_happiness_delta <- 0.05;
+        
+        num_cycles_to_wander <- 10;
+		choose_place_probability <- 0.5;
     }
     
     aspect base {
@@ -603,6 +674,9 @@ species GuestFoodie parent: GuestBase {
         // A foodie is moderately affected by hello replies
         hello_agree_happiness_delta <- 0.1;
         hello_refuse_happiness_delta <- 0.1;
+        
+        num_cycles_to_wander <- 10;
+		choose_place_probability <- 0.3;
     }
     
     aspect base {
@@ -668,6 +742,9 @@ species GuestVeganActivist parent: GuestBase {
         // A negative reply has a greater affect
         hello_agree_happiness_delta <- 0.07;
         hello_refuse_happiness_delta <- 0.15;
+        
+        num_cycles_to_wander <- 15;
+		choose_place_probability <- 0.3;
     }
     
     reflex handle_requests when: !empty(requests) {
