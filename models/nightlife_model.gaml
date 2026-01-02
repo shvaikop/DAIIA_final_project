@@ -307,7 +307,7 @@ species GuestBase skills: [moving, fipa]  {
 	// variables related to choosing and going to locations
 	int num_cycles_to_wander;
 	int leave_place_cycle <- nil;	// cycle number when agent can leave the current place
-	int last_in_place_cycle <- 0;	// cycle number when agent was last in a place
+	int last_in_place_cycle <- 0;	// cycle number when agent was last in a place, updated when agent leaves a place
 	float choose_place_probability;	// probability of choosing to go to a place instead of keeping on wandering around
 	float leave_place_probability <- 0.3;
     
@@ -332,6 +332,7 @@ species GuestBase skills: [moving, fipa]  {
 
 			// pick that place instance
 			current_place <- ALL_PLACES[idx];
+			leave_place_cycle <- cycle + current_place.min_length_stay;
 		    do log(LOG_LEVEL_WARNING, guestId,
 		    	"Agent " + guestId + " chose a place " + current_place.kind
 		    );
@@ -340,7 +341,7 @@ species GuestBase skills: [moving, fipa]  {
 			do log(LOG_LEVEL_WARNING, guestId, "Agent " + guestId + " did not choose a place");
 		}
     }
-        
+
     reflex go_or_stay_or_leave_place when: current_place != nil {
     	// distance to target place
     	float d <- location distance_to current_place.location;
@@ -444,7 +445,6 @@ species GuestBase skills: [moving, fipa]  {
 	    // nearby guests (excluding self)
 	    list<GuestBase> nearby <- get_nearby_guests();
 		int n <- length(nearby);
-		write "Number of nearby: " + n;
     	if (n = 0) { 
     		return;
     	}
