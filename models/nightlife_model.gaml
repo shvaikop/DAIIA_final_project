@@ -10,15 +10,14 @@ model NightlifeModel
 
 global {
 	
-	
 	float world_width <- 100.0;
     float world_height <- 100.0;
     
-    int party_guests_count <- 15;
-    int introvert_guests_count <- 15;
-    int foodie_guests_count <- 0;
-    int music_guests_count <- 0;
-    int vegan_guests_count <- 0;
+    int party_guests_count <- 10;
+    int introvert_guests_count <- 10;
+    int foodie_guests_count <- 10;
+    int music_guests_count <- 10;
+    int vegan_guests_count <- 10;
     
     list<PlaceBase> ALL_PLACES;
     
@@ -44,9 +43,10 @@ global {
 	
 	int LOG_LEVEL_DEBUG <- 0;
 	int LOG_LEVEL_INFO <- 1;
-	int LOG_LEVEL_WARNING <- 2;
+	int LOG_LEVEL_PRESENTATION <- 2;
+	int LOG_LEVEL_WARNING <- 3;
 
-	int min_log_level <- LOG_LEVEL_INFO;
+	int min_log_level <- LOG_LEVEL_PRESENTATION;
 	
 	int guestIdGenerator <- 0;
 	
@@ -114,6 +114,52 @@ global {
 		    guestId <- guestIdGenerator;
 		    guestIdGenerator <- guestIdGenerator + 1;
 		}
+    }
+    
+    action write_happiness_stats(string prefix, list<float> data) {
+    	
+    	float min_val <- min(data);
+    	float max_val <- max(data);
+    	float mean_val <- mean(data);
+    	float median_val <- median(data);
+    	
+    	write "cycle: " + cycle + "|| " + prefix
+	        + " | min=" + min_val
+	        + " max=" + max_val
+	        + " mean=" + mean_val
+	        + " median=" + median_val;
+    }
+    
+    reflex write_statistics when: cycle mod 10 = 0 {
+    	// Redundant code but I did not find a better to do this.
+		list<GuestBase> all_party <- PartyGuest;
+        list<GuestBase> all_introvert <- GuestIntrovert;
+        list<GuestBase> all_music_fan <- GuestMusicFan;
+        list<GuestBase> all_foodie <- GuestFoodie;
+        list<GuestBase> all_vegan_activist <- GuestVeganActivist;
+
+		// concatenate all lists
+	    list<GuestBase> all_guests <- all_party + all_introvert + 
+	    	all_music_fan + all_foodie + all_vegan_activist;
+
+	   list<float> all_happiness <- all_guests collect each.happiness;
+	   do write_happiness_stats("HAPPINESS STATS: ALL GUESTS:", all_happiness);
+	   
+	   // ---- per-type stats ----
+	    list<float> party_happiness <- all_party collect each.happiness;
+	    do write_happiness_stats("HAPPINESS STATS: PARTY GUESTS", party_happiness);
+	
+	    list<float> introvert_happiness <- all_introvert collect each.happiness;
+	    do write_happiness_stats("HAPPINESS STATS: INTROVERTS", introvert_happiness);
+	
+	    list<float> music_happiness <- all_music_fan collect each.happiness;
+	    do write_happiness_stats("HAPPINESS STATS: MUSIC FANS", music_happiness);
+	
+	    list<float> foodie_happiness <- all_foodie collect each.happiness;
+	    do write_happiness_stats("HAPPINESS STATS: FOODIES", foodie_happiness);
+	
+	    list<float> vegan_happiness <- all_vegan_activist collect each.happiness;
+	    do write_happiness_stats("HAPPINESS STATS: VEGAN ACTIVISTS", vegan_happiness);
     }
 }
 
@@ -301,8 +347,11 @@ species GuestBase skills: [moving, fipa]  {
     int last_hello_step <- -1000;   // long a
     // The number of time-steps to not say "hello" after saying "hello"
 	int HELLO_COOLDOWN  <- 20;      // steps between hellos
-	// The radius to consider
-	float COMMUNICATION_RADIUS  <- 35.0;
+	// The radius to consider during FIPA communication
+	float COMMUNICATION_RADIUS  <- 10.0;
+	
+	// The radius that Guests consider to decide whether a place is crowded or not
+	float SOCIAL_DENSITY_RADIUS <- 20.0;
 	
 	// variables related to choosing and going to locations
 	int num_cycles_to_wander;
@@ -321,26 +370,6 @@ species GuestBase skills: [moving, fipa]  {
     reflex wander_around when: current_place = nil {
     	do wander;
     }
-    
-    reflex choose_place when: current_place = nil {
-    	if (cycle < last_in_place_cycle + num_cycles_to_wander) {
-    		return;
-    	}
-		if (rnd(0.0, 0.1) <= choose_place_probability) {
-			// choose integer 0–4
-	   		int idx <- rnd(0, 4);
-
-			// pick that place instance
-			current_place <- ALL_PLACES[idx];
-			leave_place_cycle <- cycle + current_place.min_length_stay;
-		    do log(LOG_LEVEL_WARNING, guestId,
-		    	"Agent " + guestId + " chose a place " + current_place.kind
-		    );
-		}
-		else {
-			do log(LOG_LEVEL_WARNING, guestId, "Agent " + guestId + " did not choose a place");
-		}
-    }
 
     reflex go_or_stay_or_leave_place when: current_place != nil {
     	// distance to target place
@@ -358,7 +387,7 @@ species GuestBase skills: [moving, fipa]  {
 	    	}
 	    	if (cycle > leave_place_cycle and rnd(0.0, 1.0) <= leave_place_probability) {
 	    		// Leave place
-	    		do log(LOG_LEVEL_WARNING, guestId,
+	    		do log(LOG_LEVEL_INFO, guestId,
 	    			"Guest " + guestId + " is leaving a place " + current_place.kind
 	    		);
 	    		last_in_place_cycle <- cycle;
@@ -377,23 +406,23 @@ species GuestBase skills: [moving, fipa]  {
 	}
     
     // Returns a list of all guests in the COMMUNICATION_RADIUS
-    action get_nearby_guests {
+    list<GuestBase> get_nearby_guests(int radius) {
     	// Redundant code but I did not find a better to do this.
 		list<GuestBase> nearby_party <- PartyGuest
         where (each != self and
-               (location distance_to each.location) <= COMMUNICATION_RADIUS);
+               (location distance_to each.location) <= radius);
         list<GuestBase> nearby_introvert <- GuestIntrovert
         where (each != self and
-               (location distance_to each.location) <= COMMUNICATION_RADIUS);
+               (location distance_to each.location) <= radius);
         list<GuestBase> nearby_music_fan <- GuestMusicFan
         where (each != self and
-               (location distance_to each.location) <= COMMUNICATION_RADIUS);
+               (location distance_to each.location) <= radius);
         list<GuestBase> nearby_foodie <- GuestFoodie
         where (each != self and
-               (location distance_to each.location) <= COMMUNICATION_RADIUS);
+               (location distance_to each.location) <= radius);
         list<GuestBase> nearby_vegan_activist <- GuestVeganActivist
         where (each != self and
-               (location distance_to each.location) <= COMMUNICATION_RADIUS);
+               (location distance_to each.location) <= radius);
 
 		// concatenate all lists
 	    list<GuestBase> all_nearby <- nearby_party + nearby_introvert + 
@@ -402,6 +431,183 @@ species GuestBase skills: [moving, fipa]  {
 	    // shuffle to avoid type bias
 	    return shuffle(all_nearby);
     }
+    
+    
+	/**
+	 * Compute a base desirability score for a place based on
+	 * compatibility between agent traits and place properties.
+	 *
+	 * - tolerance determines how well the agent handles noise
+	 * - sociability determines how much the agent enjoys social pressure
+	 *
+	 * The (trait - 0.5) term amplifies preference:
+	 *   - agents above 0.5 prefer high values
+	 *   - agents below 0.5 prefer low values
+	 *
+	 * The result is an unbounded real-valued score (can be negative).
+	 */
+	float score_place_base(PlaceBase p) {
+	
+	    // Noise compatibility:
+	    //  - high tolerance → likes noisy places
+	    //  - low tolerance → prefers quiet places
+	    float noise_score <- tolerance + (tolerance - 0.5) * p.noise;
+	
+	    // Social compatibility:
+	    //  - sociable agents prefer high social pressure
+	    //  - introverted agents prefer calm environments
+	    float social_score <- sociability + (sociability - 0.5) * p.social_pressure;
+	
+	    // Combine both factors with equal importance
+		float score <- (0.5 * noise_score) + (0.5 * social_score);
+	
+	    return score;
+	}
+	
+	// TODO: move to individual Guest types
+	float score_place_specific(PlaceBase p) {
+		return 0.0;
+	}
+	
+
+     /**
+	 * Normalize a list of raw place scores into a probability distribution.
+	 *
+	 * Steps:
+	 * 1. Shift scores by a constant offset if needed so all values are ≥ 0
+	 *    (this preserves relative preferences).
+	 * 2. Normalize by dividing each score by the total sum.
+	 *
+	 * If all scores collapse to zero, fall back to a uniform distribution.
+	 */
+	list<float> normalize_place_probs(list<float> place_scores) {
+	
+		// Shift scores if any are negative so the minimum becomes 0
+	    float min_score <- min(place_scores);
+	    float offset <- max(0.0, -min_score);
+	
+	    list<float> shifted_scores <- place_scores collect (each + offset);
+	
+	    do log(
+	        LOG_LEVEL_DEBUG,
+	        guestId,
+	        "Score offset applied: " + offset
+	    );
+	
+	    // Convert shifted scores into probabilities
+	    float sum_weights <- sum(shifted_scores);
+	
+	    // Safety fallback: uniform probabilities if all scores are zero
+	    if (sum_weights <= 0.0) {
+	        shifted_scores <- place_scores collect 1.0;
+	        sum_weights <- length(place_scores);
+	
+	        do log(
+	            LOG_LEVEL_WARNING,
+	            guestId,
+	            "All place scores were zero after shift; using uniform distribution"
+	        );
+	    }
+	
+	    list<float> probs <- shifted_scores collect (each / sum_weights);
+	
+	    do log(
+	        LOG_LEVEL_DEBUG,
+	        guestId,
+	        "Normalized probabilities: " + probs
+	    );
+	
+	    return probs;
+	}
+
+	/**
+	 * Sample a place using a weighted random choice.
+	 *
+	 * The algorithm:
+	 *  - Draw a random number r ∈ [0,1)
+	 *  - Walk through cumulative probabilities
+	 *  - Select the first place whose cumulative probability exceeds r
+	 *
+	 * This implements roulette-wheel (fitness-proportionate) selection.
+	 */
+	PlaceBase pick_place_by_weighted_probs(list<float> normalized_place_probs) {
+	
+	    list<PlaceBase> places <- ALL_PLACES;
+	
+	    do log(
+	        LOG_LEVEL_DEBUG,
+	        guestId,
+	        "Normalized place probabilities: "
+	        + (places collect (each.kind + "="))
+	        + normalized_place_probs
+	    );
+	
+	    float r <- rnd(0.0, 1.0);
+	    float acc <- 0.0;
+	    int idx <- 0;
+	
+	    // Cumulative probability scan
+	    loop i from: 0 to: length(normalized_place_probs) - 1 {
+	        acc <- acc + normalized_place_probs[i];
+	        if (r <= acc) {
+	            idx <- i;
+	            break;
+	        }
+	    }
+	
+	    do log(
+	        LOG_LEVEL_INFO,
+	        guestId,
+	        "Agent " + guestId + " chose place "
+	        + places[idx].kind
+	        + " (p=" + normalized_place_probs[idx] + ")"
+	    );
+	
+	    return places[idx];
+	}
+	
+	PlaceBase pick_place_random {
+		list<PlaceBase> places <- ALL_PLACES;
+		int idx <- rnd(0, 4);
+		return places[idx];
+	}
+
+
+	/**
+	 * Decide whether to choose a new place and select it probabilistically.
+	 *
+	 * This reflex:
+	 *  - Computes raw desirability scores for all places
+	 *  - Normalizes them into probabilities
+	 *  - Samples one place using weighted random selection
+	 *
+	 * The stochastic decision allows heterogeneous but non-deterministic behavior.
+	 */
+	reflex choose_place
+	when: current_place = nil
+	  and cycle > last_in_place_cycle + num_cycles_to_wander
+	  and rnd(0.0, 1.0) < choose_place_probability
+	{
+	
+	    list<PlaceBase> places <- ALL_PLACES;
+	
+	    // Compute raw desirability scores (can be negative)
+	    list<float> weights <- places collect score_place_base(each);
+	
+	    do log(
+	        LOG_LEVEL_DEBUG,
+	        guestId,
+	        "Raw place scores: "
+	        + (places collect (each.kind + "="))
+	        + weights
+	    );
+	
+	    // Convert raw scores into a valid probability distribution
+	    list<float> normalized_weights <- normalize_place_probs(weights);
+	
+	    // Sample one place according to probabilities
+	    current_place <- pick_place_by_weighted_probs(normalized_weights);
+	}
     
     action handle_hello_request(message m) {
     	do log(LOG_LEVEL_DEBUG, guestId,
@@ -435,15 +641,15 @@ species GuestBase skills: [moving, fipa]  {
     
     reflex say_hello {
     	// must be in a place
-//	    if (current_place = nil) { 
-//	        return; 
-//	    }
+	    if (current_place = nil) { 
+	        return; 
+	    }
 	    // cooldown check
 	    if (cycle - last_hello_step < HELLO_COOLDOWN) {
 	        return;
 	    }
 	    // nearby guests (excluding self)
-	    list<GuestBase> nearby <- get_nearby_guests();
+	    list<GuestBase> nearby <- get_nearby_guests(COMMUNICATION_RADIUS);
 		int n <- length(nearby);
     	if (n = 0) { 
     		return;
@@ -451,9 +657,7 @@ species GuestBase skills: [moving, fipa]  {
     	
     	// TODO: log p_hello and check that it is reasonable
     	float crowd_factor <- min(1.0, n / 6.0);
-//	    float place_factor <- current_place.social_pressure;
-		// TODO: fix
-		float place_factor <- 1.0;
+	    float place_factor <- current_place.social_pressure;
 	    float p_hello <- sociability * crowd_factor * place_factor;
 	    
 	    if (rnd(0.0, 1.0) < p_hello) {
@@ -498,6 +702,10 @@ species PartyGuest parent: GuestBase {
     
     aspect base {
         draw circle(2.0) color: COLOR_PARTY_GUEST;
+    }
+    
+    reflex adjust_happiness {
+    	// TODO
     }
     
     reflex handle_requests when: !empty(requests) {
@@ -561,9 +769,10 @@ species GuestIntrovert parent: GuestBase {
     aspect base {
         draw circle(2) color: COLOR_INTROVERT;
     }
-
-    reflex react_to_noise when: current_place != nil {
-        happiness <- happiness - max(0, current_place.noise - tolerance) * 0.02;
+    
+    reflex adjust_happiness {
+    	// React to noise
+    	happiness <- happiness - max(0, current_place.noise - tolerance) * 0.02;
     }
     
     reflex handle_requests when: !empty(requests) {
@@ -621,11 +830,12 @@ species GuestMusicFan parent: GuestBase {
     aspect base {
         draw circle(2) color: COLOR_MUSIC_FAN;
     }
-
-    reflex concert_happiness when: current_place != nil {
-        if (current_place.kind = "concert") {
-            happiness <- happiness + 0.03;
-        }
+    
+    reflex adjust_happiness {
+    	// concert happiness
+    	if (current_place != nil) {
+    		happiness <- happiness + 0.03;
+    	}
     }
 
     reflex handle_requests when: !empty(requests) {
@@ -682,12 +892,10 @@ species GuestFoodie parent: GuestBase {
     aspect base {
         draw circle(2) color: COLOR_FOODIE;
     }
-
-//    reflex food_place_bonus {
-//        if (current_place.kind = "restaurant" or current_place.kind = "cafe") {
-//            happiness <- happiness + 0.02;
-//        }
-//    }
+    
+    reflex adjust_happiness {
+		// TODO
+    }
 
 	reflex handle_requests when: !empty(requests) {
     	// Take the first pending request message
@@ -732,6 +940,10 @@ species GuestVeganActivist parent: GuestBase {
 	
 	aspect base {
         draw circle(2) color: COLOR_VEGAN_ACTIVIST;
+    }
+    
+    reflex adjust_happiness {
+    	// TODO
     }
 
     init {
@@ -825,20 +1037,42 @@ experiment NightlifeGUI type: gui {
 // TODO:
 // 1. Add functionality of going to places
 
-// 2. Add functionality of becoming hungry and going to get food/drinks
-//    Choosing to go to bar/restaurant is less likely when guest is full
+// 1.1. Display statistics information
 
-// 3. Add functionality of sharing food (vegan/ not vegan)
+// 2.1 In a club party guests invite others to their groups, happiness changes based on response
+//     Introverts also become less happy when invited to groups
 
-// 4. Add functionality of getting in groups in bar, club, concert
+// 2.2 Menu inquiry in Bar, Restaurant, Cafe (VeganActivist), ordering food
 
-// 5. Add functionality of club/concert playing different type of music (rock/pop) and affecting the music fans
+// 2.3 Vegan activist inquires what food the guests are eating
+
+// 3. Add functionality of sharing food / drinks (vegan/ not vegan)
+
+// 3.3 Music genre debate in club and concert:
+//     Music fan sends an inform or request about what genre they like
+
+
+
+
+
+
 
 // 5.5 Music fans getting into their own groups and staying in them for longer
 
 // 6. From time to time calculate statistics and show them
 
 // 7. Change happiness based on guest type and how many people there are nearby
+
+
+
+// 2. Add functionality of becoming hungry and going to get food/drinks
+//    Choosing to go to bar/restaurant is less likely when guest is full
+
+// 4. Add functionality of getting in groups in bar, club, concert
+
+
+// 5. Add functionality of club/concert playing different type of music (rock/pop) and affecting the music fans
+
 
 
 
