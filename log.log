@@ -1,0 +1,317 @@
+[step=129] [agent=19] FOOD_QUERY_SENT -> to=11
+[step=129] [agent=2] Guest 2 is leaving a place bar
+[step=129] [agent=8] Guest 8 is leaving a place bar
+cycle: 130|| HAPPINESS STATS: ALL GUESTS: | min=0.327645 max=0.8079000000000003 mean=0.5162630780353892 median=0.48750000000000004
+cycle: 130|| HAPPINESS STATS: PARTY GUESTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 130|| HAPPINESS STATS: INTROVERTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 130|| HAPPINESS STATS: MUSIC FANS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 130|| HAPPINESS STATS: FOODIES | min=0.327645 max=0.8079000000000003 mean=0.5466105000000001 median=0.536
+cycle: 130|| HAPPINESS STATS: VEGAN ACTIVISTS | min=0.343387967594616 max=0.609661156177482 mean=0.4859156560707786 median=0.45308372789459056
+[step=130] [agent=11] FOOD_QUERY_REPLIED -> to=19 | myFood=burger
+[step=130] [agent=19] FOOD_QUERY_REPLY_RECEIVED <- from=11 | food=burger
+[step=130] [agent=19] VEGAN_TELL_OFF -> target=11 | reason=burger
+[step=130] [agent=3] FOOD_OFFER_SENT -> to=12 | place=cafe
+[step=131] [agent=10] FOOD_QUERY_SENT -> to=17
+[step=131] [agent=16] Agent 16 chose place restaurant (p=0.2155588941537693)
+[step=131] [agent=17] FOOD_QUERY_REPLIED -> to=10 | myFood=burger
+[step=132] [agent=10] FOOD_QUERY_REPLY_RECEIVED <- from=17 | food=burger
+[step=132] [agent=10] VEGAN_TELL_OFF -> target=17 | reason=burger
+[step=132] [agent=16] VEGAN_MENU_ASK_SENT -> to=restaurant
+[step=132] [agent=16] FOOD_QUERY_SENT -> to=13
+[step=132] [agent=1] Guest 1 is leaving a place club
+[step=132] [agent=7] FOOD_OFFER_SENT -> to=14 | place=restaurant
+[step=133] [restaurant] VEGAN_MENU_REPLY -> No vegan options right now.
+[step=133] [agent=10] Guest 10 is leaving a place cafe
+[step=133] [agent=13] FOOD_QUERY_REPLIED -> to=16 | myFood=salad
+[step=133] [agent=16] VEGAN_MENU_REPLY_RECEIVED <- available=false | msg=No vegan options right now.
+[step=134] [agent=16] FOOD_QUERY_REPLY_RECEIVED <- from=13 | food=salad
+[step=134] [agent=18] Agent 18 chose place bar (p=0.1878286297845886)
+[step=134] [agent=9] Agent 9 chose place club (p=0.20583224000200523)
+[step=135] [agent=19] Guest 19 is leaving a place club
+[step=138] [agent=13] FOOD_QUERY_SENT -> to=16
+[step=138] [agent=16] FOOD_QUERY_REPLIED -> to=13 | myFood=salad
+[step=138] [agent=16] Guest 16 is leaving a place restaurant
+[step=139] [agent=13] FOOD_QUERY_REPLY_RECEIVED <- from=16 | food=salad
+[step=139] [agent=5] Guest 5 is leaving a place club
+cycle: 140|| HAPPINESS STATS: ALL GUESTS: | min=0.2948805 max=0.8079000000000003 mean=0.5070783049648708 median=0.48750000000000004
+cycle: 140|| HAPPINESS STATS: PARTY GUESTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 140|| HAPPINESS STATS: INTROVERTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 140|| HAPPINESS STATS: MUSIC FANS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 140|| HAPPINESS STATS: FOODIES | min=0.2948805 max=0.8079000000000003 mean=0.54333405 median=0.536
+cycle: 140|| HAPPINESS STATS: VEGAN ACTIVISTS | min=0.30849127913669605 max=0.609661156177482 mean=0.47082255992974176 median=0.4396062081463278
+[step=140] [agent=12] Guest 12 is leaving a place cafe
+[step=140] [agent=14] FOOD_QUERY_SENT -> to=0
+[step=140] [agent=18] FOOD_QUERY_SENT -> to=12
+[step=141] [agent=12] FOOD_QUERY_REPLIED -> to=18 | myFood=burger
+[step=141] [agent=18] FOOD_QUERY_REPLY_RECEIVED <- from=12 | food=burger
+[step=141] [agent=18] VEGAN_TELL_OFF -> target=12 | reason=burger
+[step=144] [agent=2] Agent 2 chose place concert (p=0.2070677270422957)
+[step=145] [agent=17] Agent 17 chose place restaurant (p=0.2050612996730562)
+[step=145] [agent=6] Guest 6 is leaving a place bar
+[step=146] [agent=13] Guest 13 is leaving a place restaurant
+[step=146] [agent=17] VEGAN_MENU_ASK_SENT -> to=restaurant
+[step=146] [agent=0] FOOD_OFFER_SENT -> to=14 | place=bar
+[step=146] [agent=3] Guest 3 is leaving a place cafe
+[step=147] [restaurant] VEGAN_MENU_REPLY -> No vegan options right now.
+[step=147] [agent=15] FOOD_QUERY_SENT -> to=19
+[step=147] [agent=17] VEGAN_MENU_REPLY_RECEIVED <- available=false | msg=No vegan options right now.
+[step=147] [agent=19] FOOD_QUERY_REPLIED -> to=15 | myFood=none
+[step=147] [agent=1] Agent 1 chose place club (p=0.2019698571961333)
+[step=148] [agent=15] FOOD_QUERY_REPLY_RECEIVED <- from=19 | food=none
+[step=148] [agent=15] Guest 15 is leaving a place club
+[step=149] [agent=4] Agent 4 chose place concert (p=0.2052703215302603)
+cycle: 150|| HAPPINESS STATS: ALL GUESTS: | min=0.2948805 max=0.8079000000000003 mean=0.5076146285727176 median=0.4849091169419692
+cycle: 150|| HAPPINESS STATS: PARTY GUESTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 150|| HAPPINESS STATS: INTROVERTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 150|| HAPPINESS STATS: MUSIC FANS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 150|| HAPPINESS STATS: FOODIES | min=0.2948805 max=0.8079000000000003 mean=0.5427679500000001 median=0.536
+cycle: 150|| HAPPINESS STATS: VEGAN ACTIVISTS | min=0.30849127913669605 max=0.609661156177482 mean=0.47246130714543516 median=0.44498927749287437
+[step=151] [agent=10] Agent 10 chose place bar (p=0.1896050480102712)
+[step=151] [agent=5] Agent 5 chose place cafe (p=0.2065853694864831)
+[step=152] [agent=19] Agent 19 chose place restaurant (p=0.23836464687090306)
+[step=152] [agent=5] FOOD_OFFER_SENT -> to=19 | place=cafe
+[step=152] [agent=8] Agent 8 chose place bar (p=0.20047435675287523)
+[step=153] [agent=17] FOOD_QUERY_SENT -> to=3
+[step=153] [agent=19] VEGAN_MENU_ASK_SENT -> to=restaurant
+[step=153] [agent=8] FOOD_OFFER_SENT -> to=9 | place=bar
+[step=153] [agent=9] FOOD_OFFER_REFUSED <- from=8
+[step=154] [restaurant] VEGAN_MENU_REPLY -> Yes, we have vegan options.
+[step=154] [agent=19] VEGAN_MENU_REPLY_RECEIVED <- available=true | msg=Yes, we have vegan options.
+[step=154] [agent=1] Guest 1 is leaving a place club
+[step=154] [agent=8] FOOD_SHARED_REFUSED <- by=9
+[step=155] [agent=0] Guest 0 is leaving a place bar
+[step=156] [agent=6] Agent 6 chose place concert (p=0.2070486159777465)
+[step=156] [agent=8] Guest 8 is leaving a place bar
+[step=157] [agent=14] Guest 14 is leaving a place bar
+[step=157] [agent=18] Guest 18 is leaving a place bar
+[step=159] [agent=16] Agent 16 chose place club (p=0.18333398654336946)
+[step=159] [agent=19] FOOD_QUERY_SENT -> to=1
+[step=159] [agent=3] Agent 3 chose place concert (p=0.20944444165267861)
+cycle: 160|| HAPPINESS STATS: ALL GUESTS: | min=0.2948805 max=0.8271100000000002 mean=0.5055617543898896 median=0.4924091169419692
+cycle: 160|| HAPPINESS STATS: PARTY GUESTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 160|| HAPPINESS STATS: INTROVERTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 160|| HAPPINESS STATS: MUSIC FANS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 160|| HAPPINESS STATS: FOODIES | min=0.2948805 max=0.8271100000000002 mean=0.5360449500000001 median=0.51665
+cycle: 160|| HAPPINESS STATS: VEGAN ACTIVISTS | min=0.334663795480136 max=0.609661156177482 mean=0.4750785587797791 median=0.44498927749287437
+[step=160] [agent=12] Agent 12 chose place bar (p=0.19213619109236932)
+[step=161] [agent=10] FOOD_QUERY_SENT -> to=3
+[step=161] [agent=12] FOOD_QUERY_SENT -> to=3
+[step=162] [agent=13] Agent 13 chose place restaurant (p=0.20766922863306686)
+[step=162] [agent=16] FOOD_QUERY_SENT -> to=7
+[step=162] [agent=7] FOOD_OFFER_SENT -> to=13 | place=restaurant
+[step=163] [agent=13] VEGAN_MENU_ASK_SENT -> to=restaurant
+[step=163] [agent=13] Guest 13 is leaving a place restaurant
+[step=164] [restaurant] VEGAN_MENU_REPLY -> Yes, we have vegan options.
+[step=164] [agent=13] VEGAN_MENU_REPLY_RECEIVED <- available=true | msg=Yes, we have vegan options.
+[step=164] [agent=7] Guest 7 is leaving a place restaurant
+[step=165] [agent=15] Agent 15 chose place restaurant (p=0.21054748310495136)
+[step=165] [agent=1] Agent 1 chose place club (p=0.2019698571961333)
+[step=166] [agent=15] VEGAN_MENU_ASK_SENT -> to=restaurant
+[step=166] [agent=0] Agent 0 chose place restaurant (p=0.19306712166787987)
+[step=166] [agent=1] Guest 1 is leaving a place club
+[step=167] [restaurant] VEGAN_MENU_REPLY -> Yes, we have vegan options.
+[step=167] [agent=15] VEGAN_MENU_REPLY_RECEIVED <- available=true | msg=Yes, we have vegan options.
+cycle: 170|| HAPPINESS STATS: ALL GUESTS: | min=0.2948805 max=0.8271100000000002 mean=0.50681637577833 median=0.4924091169419692
+cycle: 170|| HAPPINESS STATS: PARTY GUESTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 170|| HAPPINESS STATS: INTROVERTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 170|| HAPPINESS STATS: MUSIC FANS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 170|| HAPPINESS STATS: FOODIES | min=0.2948805 max=0.8271100000000002 mean=0.53355596 median=0.51665
+cycle: 170|| HAPPINESS STATS: VEGAN ACTIVISTS | min=0.334663795480136 max=0.6113443205873329 mean=0.48007679155666017 median=0.455539844268554
+[step=171] [agent=10] Guest 10 is leaving a place bar
+[step=171] [agent=8] Agent 8 chose place club (p=0.19856739798219175)
+[step=173] [agent=11] FOOD_QUERY_SENT -> to=2
+[step=173] [agent=14] Agent 14 chose place club (p=0.17382528870447841)
+[step=173] [agent=18] Agent 18 chose place restaurant (p=0.23231247158990942)
+[step=174] [agent=14] FOOD_QUERY_SENT -> to=0
+[step=174] [agent=18] VEGAN_MENU_ASK_SENT -> to=restaurant
+[step=174] [agent=18] FOOD_QUERY_SENT -> to=10
+[step=175] [restaurant] VEGAN_MENU_REPLY -> Yes, we have vegan options.
+[step=175] [agent=10] FOOD_QUERY_REPLIED -> to=18 | myFood=burger
+[step=175] [agent=18] VEGAN_MENU_REPLY_RECEIVED <- available=true | msg=Yes, we have vegan options.
+[step=176] [agent=18] FOOD_QUERY_REPLY_RECEIVED <- from=10 | food=burger
+[step=176] [agent=18] VEGAN_TELL_OFF -> target=10 | reason=burger
+[step=176] [agent=0] FOOD_OFFER_SENT -> to=18 | place=restaurant
+[step=176] [agent=2] Guest 2 is leaving a place concert
+[step=176] [agent=4] Guest 4 is leaving a place concert
+[step=177] [agent=7] Agent 7 chose place bar (p=0.20008079280238236)
+[step=178] [agent=15] FOOD_QUERY_SENT -> to=16
+[step=178] [agent=16] FOOD_QUERY_REPLIED -> to=15 | myFood=burger
+[step=178] [agent=1] Agent 1 chose place concert (p=0.20043388280122273)
+[step=179] [agent=15] FOOD_QUERY_REPLY_RECEIVED <- from=16 | food=burger
+[step=179] [agent=15] VEGAN_TELL_OFF -> target=16 | reason=burger
+cycle: 180|| HAPPINESS STATS: ALL GUESTS: | min=0.2948805 max=0.8271100000000002 mean=0.4978413449788805 median=0.48177500000000006
+cycle: 180|| HAPPINESS STATS: PARTY GUESTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 180|| HAPPINESS STATS: INTROVERTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 180|| HAPPINESS STATS: MUSIC FANS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 180|| HAPPINESS STATS: FOODIES | min=0.2948805 max=0.8271100000000002 mean=0.52841596 median=0.5071500000000001
+cycle: 180|| HAPPINESS STATS: VEGAN ACTIVISTS | min=0.334663795480136 max=0.6113443205873329 mean=0.4672667299577613 median=0.4403001178867653
+[step=181] [agent=13] Agent 13 chose place restaurant (p=0.20766922863306686)
+[step=185] [agent=11] Guest 11 is leaving a place concert
+[step=185] [agent=13] FOOD_QUERY_SENT -> to=19
+[step=185] [agent=19] FOOD_QUERY_REPLIED -> to=13 | myFood=burger
+[step=186] [agent=12] Guest 12 is leaving a place bar
+[step=186] [agent=13] FOOD_QUERY_REPLY_RECEIVED <- from=19 | food=burger
+[step=186] [agent=13] VEGAN_TELL_OFF -> target=19 | reason=burger
+[step=186] [agent=13] Guest 13 is leaving a place restaurant
+[step=186] [agent=17] VEGAN_MENU_ASK_SENT -> to=restaurant
+[step=186] [agent=6] Guest 6 is leaving a place concert
+[step=187] [restaurant] VEGAN_MENU_REPLY -> Yes, we have vegan options.
+[step=187] [agent=17] VEGAN_MENU_REPLY_RECEIVED <- available=true | msg=Yes, we have vegan options.
+[step=187] [agent=4] Agent 4 chose place club (p=0.20788634455983387)
+[step=188] [agent=10] Agent 10 chose place club (p=0.1551993770921035)
+[step=188] [agent=19] Guest 19 is leaving a place restaurant
+[step=189] [agent=17] FOOD_QUERY_SENT -> to=7
+[step=189] [agent=2] Agent 2 chose place restaurant (p=0.19356968879984518)
+cycle: 190|| HAPPINESS STATS: ALL GUESTS: | min=0.2948805 max=0.7443990000000003 mean=0.4942278417020017 median=0.49392500000000006
+cycle: 190|| HAPPINESS STATS: PARTY GUESTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 190|| HAPPINESS STATS: INTROVERTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 190|| HAPPINESS STATS: MUSIC FANS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 190|| HAPPINESS STATS: FOODIES | min=0.2948805 max=0.7443990000000003 mean=0.5295482600000001 median=0.5324000000000001
+cycle: 190|| HAPPINESS STATS: VEGAN ACTIVISTS | min=0.334663795480136 max=0.609661156177482 mean=0.45890742340400364 median=0.4228028318827777
+[step=190] [agent=2] FOOD_OFFER_SENT -> to=11 | place=restaurant
+[step=191] [agent=10] FOOD_QUERY_SENT -> to=12
+[step=191] [agent=12] FOOD_QUERY_REPLIED -> to=10 | myFood=vegan_bowl
+[step=191] [agent=5] Guest 5 is leaving a place cafe
+[step=192] [agent=10] FOOD_QUERY_REPLY_RECEIVED <- from=12 | food=vegan_bowl
+[step=192] [agent=16] FOOD_QUERY_SENT -> to=9
+[step=192] [agent=7] FOOD_OFFER_SENT -> to=17 | place=bar
+[step=196] [agent=16] Guest 16 is leaving a place club
+[step=199] [agent=15] Guest 15 is leaving a place restaurant
+cycle: 200|| HAPPINESS STATS: ALL GUESTS: | min=0.2948805 max=0.7443990000000003 mean=0.4949641509372665 median=0.49704047875603136
+cycle: 200|| HAPPINESS STATS: PARTY GUESTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 200|| HAPPINESS STATS: INTROVERTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 200|| HAPPINESS STATS: MUSIC FANS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 200|| HAPPINESS STATS: FOODIES | min=0.2948805 max=0.7443990000000003 mean=0.533123169 median=0.5544500000000001
+cycle: 200|| HAPPINESS STATS: VEGAN ACTIVISTS | min=0.334663795480136 max=0.6304396587905867 mean=0.45680513287453295 median=0.4132558874545884
+[step=201] [agent=6] Agent 6 chose place bar (p=0.20365834879387104)
+[step=202] [agent=12] Agent 12 chose place restaurant (p=0.2252514519850724)
+[step=202] [agent=6] FOOD_OFFER_SENT -> to=3 | place=bar
+[step=202] [agent=9] Guest 9 is leaving a place club
+[step=203] [agent=11] Agent 11 chose place cafe (p=0.20381339524853667)
+[step=203] [agent=12] VEGAN_MENU_ASK_SENT -> to=restaurant
+[step=203] [agent=13] Agent 13 chose place bar (p=0.19646164044750994)
+[step=203] [agent=3] FOOD_OFFER_ACCEPTED <- from=6
+[step=203] [agent=5] Agent 5 chose place restaurant (p=0.20472231096694668)
+[step=203] [agent=6] FOOD_SHARED_SUCCESS <- with=3
+[step=204] [restaurant] VEGAN_MENU_REPLY -> No vegan options right now.
+[step=204] [agent=11] FOOD_QUERY_SENT -> to=3
+[step=204] [agent=12] VEGAN_MENU_REPLY_RECEIVED <- available=false | msg=No vegan options right now.
+[step=204] [agent=14] FOOD_QUERY_SENT -> to=8
+[step=204] [agent=18] FOOD_QUERY_SENT -> to=0
+[step=205] [agent=19] Agent 19 chose place bar (p=0.19080047759721314)
+[step=206] [agent=19] FOOD_QUERY_SENT -> to=17
+[step=206] [agent=0] FOOD_OFFER_SENT -> to=18 | place=restaurant
+[step=207] [agent=17] FOOD_QUERY_REPLIED -> to=19 | myFood=steak
+[step=207] [agent=19] FOOD_QUERY_REPLY_RECEIVED <- from=17 | food=steak
+[step=207] [agent=19] VEGAN_TELL_OFF -> target=17 | reason=steak
+[step=209] [agent=17] Guest 17 is leaving a place restaurant
+cycle: 210|| HAPPINESS STATS: ALL GUESTS: | min=0.2948805 max=0.7443990000000003 mean=0.5015105405212616 median=0.5170404787560314
+cycle: 210|| HAPPINESS STATS: PARTY GUESTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 210|| HAPPINESS STATS: INTROVERTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 210|| HAPPINESS STATS: MUSIC FANS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 210|| HAPPINESS STATS: FOODIES | min=0.2948805 max=0.7443990000000003 mean=0.5421231690000001 median=0.556435
+cycle: 210|| HAPPINESS STATS: VEGAN ACTIVISTS | min=0.31767022615374674 max=0.6304396587905867 mean=0.46089791204252323 median=0.43475477160768344
+[step=213] [agent=9] Agent 9 chose place bar (p=0.20313788372473)
+[step=214] [agent=16] Agent 16 chose place restaurant (p=0.2155588941537693)
+[step=214] [agent=18] VEGAN_MENU_ASK_SENT -> to=restaurant
+[step=214] [agent=5] FOOD_OFFER_SENT -> to=10 | place=restaurant
+[step=214] [agent=9] FOOD_OFFER_SENT -> to=8 | place=bar
+[step=215] [restaurant] VEGAN_MENU_REPLY -> No vegan options right now.
+[step=215] [agent=12] FOOD_QUERY_SENT -> to=7
+[step=215] [agent=13] FOOD_QUERY_SENT -> to=19
+[step=215] [agent=15] Agent 15 chose place concert (p=0.18886615569875614)
+[step=215] [agent=16] VEGAN_MENU_ASK_SENT -> to=restaurant
+[step=215] [agent=18] VEGAN_MENU_REPLY_RECEIVED <- available=false | msg=No vegan options right now.
+[step=215] [agent=19] FOOD_QUERY_REPLIED -> to=13 | myFood=steak
+[step=215] [agent=8] FOOD_OFFER_ACCEPTED <- from=9
+[step=215] [agent=9] FOOD_SHARED_SUCCESS <- with=8
+[step=216] [restaurant] VEGAN_MENU_REPLY -> No vegan options right now.
+[step=216] [agent=13] FOOD_QUERY_REPLY_RECEIVED <- from=19 | food=steak
+[step=216] [agent=13] VEGAN_TELL_OFF -> target=19 | reason=steak
+[step=216] [agent=14] Guest 14 is leaving a place club
+[step=216] [agent=15] FOOD_QUERY_SENT -> to=13
+[step=216] [agent=16] VEGAN_MENU_REPLY_RECEIVED <- available=false | msg=No vegan options right now.
+[step=217] [agent=13] FOOD_QUERY_REPLIED -> to=15 | myFood=salad
+[step=217] [agent=15] FOOD_QUERY_REPLY_RECEIVED <- from=13 | food=salad
+[step=217] [agent=6] Guest 6 is leaving a place bar
+[step=218] [agent=3] Guest 3 is leaving a place concert
+cycle: 220|| HAPPINESS STATS: ALL GUESTS: | min=0.26539245 max=0.7443990000000003 mean=0.4884344255555869 median=0.5133809913754299
+cycle: 220|| HAPPINESS STATS: PARTY GUESTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 220|| HAPPINESS STATS: INTROVERTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 220|| HAPPINESS STATS: MUSIC FANS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 220|| HAPPINESS STATS: FOODIES | min=0.26539245 max=0.7443990000000003 mean=0.531277924 median=0.5464373
+cycle: 220|| HAPPINESS STATS: VEGAN ACTIVISTS | min=0.31536962362968335 max=0.6304396587905867 mean=0.4455909271111739 median=0.4138433355620802
+[step=220] [agent=0] Guest 0 is leaving a place restaurant
+[step=221] [agent=10] FOOD_QUERY_SENT -> to=5
+[step=222] [agent=2] FOOD_OFFER_SENT -> to=15 | place=restaurant
+[step=222] [agent=7] FOOD_OFFER_SENT -> to=12 | place=bar
+[step=225] [agent=8] Guest 8 is leaving a place club
+[step=228] [agent=17] Agent 17 chose place bar (p=0.19859967853016358)
+[step=229] [agent=17] FOOD_QUERY_SENT -> to=0
+[step=229] [agent=3] Agent 3 chose place restaurant (p=0.19097180429162355)
+[step=229] [agent=6] Agent 6 chose place cafe (p=0.1919214047564742)
+cycle: 230|| HAPPINESS STATS: ALL GUESTS: | min=0.26539245 max=0.69454819 mean=0.48080066484011014 median=0.5095915
+cycle: 230|| HAPPINESS STATS: PARTY GUESTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 230|| HAPPINESS STATS: INTROVERTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 230|| HAPPINESS STATS: MUSIC FANS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 230|| HAPPINESS STATS: FOODIES | min=0.26539245 max=0.69454819 mean=0.5134968339999999 median=0.5280665
+cycle: 230|| HAPPINESS STATS: VEGAN ACTIVISTS | min=0.31536962362968335 max=0.6304396587905867 mean=0.44810449568022026 median=0.4474880284413304
+[step=230] [agent=7] Guest 7 is leaving a place bar
+[step=231] [agent=18] Guest 18 is leaving a place restaurant
+[step=232] [agent=6] FOOD_OFFER_SENT -> to=7 | place=cafe
+[step=232] [agent=7] FOOD_OFFER_REFUSED <- from=6
+[step=233] [agent=0] Agent 0 chose place concert (p=0.20708243106217306)
+[step=233] [agent=6] FOOD_SHARED_REFUSED <- by=7
+[step=234] [agent=11] FOOD_QUERY_SENT -> to=6
+[step=234] [agent=14] Agent 14 chose place club (p=0.17382528870447841)
+[step=235] [agent=14] FOOD_QUERY_SENT -> to=10
+[step=235] [agent=2] Guest 2 is leaving a place restaurant
+[step=235] [agent=3] FOOD_OFFER_SENT -> to=1 | place=restaurant
+[step=236] [agent=10] FOOD_QUERY_REPLIED -> to=14 | myFood=burger
+[step=236] [agent=14] FOOD_QUERY_REPLY_RECEIVED <- from=10 | food=burger
+[step=236] [agent=14] VEGAN_TELL_OFF -> target=10 | reason=burger
+[step=236] [agent=19] FOOD_QUERY_SENT -> to=13
+[step=236] [agent=1] FOOD_OFFER_REFUSED <- from=3
+[step=236] [agent=3] FOOD_SHARED_REFUSED <- by=1
+[step=236] [agent=8] Agent 8 chose place restaurant (p=0.20045196236488336)
+[step=237] [agent=13] FOOD_QUERY_REPLIED -> to=19 | myFood=salad
+[step=237] [agent=19] FOOD_QUERY_REPLY_RECEIVED <- from=13 | food=salad
+[step=237] [agent=8] FOOD_OFFER_SENT -> to=14 | place=restaurant
+cycle: 240|| HAPPINESS STATS: ALL GUESTS: | min=0.26539245 max=0.725093371 mean=0.4698547207227186 median=0.48566110453948397
+cycle: 240|| HAPPINESS STATS: PARTY GUESTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 240|| HAPPINESS STATS: INTROVERTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 240|| HAPPINESS STATS: MUSIC FANS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 240|| HAPPINESS STATS: FOODIES | min=0.26539245 max=0.725093371 mean=0.5070776061000001 median=0.5016350700000001
+cycle: 240|| HAPPINESS STATS: VEGAN ACTIVISTS | min=0.31536962362968335 max=0.5358737099719987 mean=0.43263183534543703 median=0.4474880284413304
+[step=240] [agent=16] FOOD_QUERY_SENT -> to=18
+[step=240] [agent=18] FOOD_QUERY_REPLIED -> to=16 | myFood=salad
+[step=241] [agent=16] FOOD_QUERY_REPLY_RECEIVED <- from=18 | food=salad
+[step=241] [agent=7] Agent 7 chose place bar (p=0.20008079280238236)
+[step=242] [agent=14] Guest 14 is leaving a place club
+[step=243] [agent=12] VEGAN_MENU_ASK_SENT -> to=restaurant
+[step=243] [agent=16] Guest 16 is leaving a place restaurant
+[step=243] [agent=7] Guest 7 is leaving a place bar
+[step=244] [restaurant] VEGAN_MENU_REPLY -> No vegan options right now.
+[step=244] [agent=12] VEGAN_MENU_REPLY_RECEIVED <- available=false | msg=No vegan options right now.
+[step=245] [agent=12] FOOD_QUERY_SENT -> to=0
+[step=245] [agent=13] FOOD_QUERY_SENT -> to=19
+[step=245] [agent=19] FOOD_QUERY_REPLIED -> to=13 | myFood=steak
+[step=245] [agent=1] Guest 1 is leaving a place concert
+[step=246] [agent=10] Guest 10 is leaving a place club
+[step=246] [agent=13] FOOD_QUERY_REPLY_RECEIVED <- from=19 | food=steak
+[step=246] [agent=13] VEGAN_TELL_OFF -> target=19 | reason=steak
+[step=246] [agent=9] FOOD_OFFER_SENT -> to=19 | place=bar
+[step=247] [agent=18] Agent 18 chose place cafe (p=0.24348951047855943)
+[step=248] [agent=18] FOOD_QUERY_SENT -> to=16
+[step=249] [agent=15] FOOD_QUERY_SENT -> to=3
+[step=249] [agent=16] FOOD_QUERY_REPLIED -> to=18 | myFood=salad
+[step=249] [agent=18] FOOD_QUERY_REPLY_RECEIVED <- from=16 | food=salad
+cycle: 250|| HAPPINESS STATS: ALL GUESTS: | min=0.26539245 max=0.725093371 mean=0.4670240808077085 median=0.4630563833454567
+cycle: 250|| HAPPINESS STATS: PARTY GUESTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 250|| HAPPINESS STATS: INTROVERTS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 250|| HAPPINESS STATS: MUSIC FANS | min=0.0 max=0.0 mean=0.0 median=0.0
+cycle: 250|| HAPPINESS STATS: FOODIES | min=0.26539245 max=0.725093371 mean=0.5067371061 median=0.5016350700000001
+cycle: 250|| HAPPINESS STATS: VEGAN ACTIVISTS | min=0.2717147358795402 max=0.5358737099719987 mean=0.427311055515417 median=0.4306323964818707
+[step=251] [agent=11] Guest 11 is leaving a place cafe
+[step=251] [agent=5] FOOD_OFFER_SENT -> to=12 | place=restaurant
+[step=253] [agent=2] Agent 2 chose place club (p=0.2040680781814995)

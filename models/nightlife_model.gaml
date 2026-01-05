@@ -46,7 +46,40 @@ global {
 	int LOG_LEVEL_PRESENTATION <- 2;
 	int LOG_LEVEL_WARNING <- 3;
 
-	int min_log_level <- LOG_LEVEL_PRESENTATION;
+	int min_log_level <- LOG_LEVEL_INFO;
+
+	
+	
+	// Party group invitations (FIPA message keys)
+	string PROTOCOL_PARTY_INVITE <- "fipa-request";
+	string FIPA_PARTY_INVITE <- "party_invite";
+	string FIPA_PARTY_INVITE_REPLY <- "party_invite_reply";
+	
+	// Music Genre
+	string FIPA_GENRE_ASK <- "genre_ask";
+	string FIPA_GENRE_REPLY <- "genre_reply";
+	string PROTOCOL_GENRE_CHAT <- "fipa-request";
+	
+	
+	// Share food
+	string FIPA_FOOD_OFFER <- "food_offer";
+	string FIPA_FOOD_REPLY <- "food_reply";
+	string PROTOCOL_FOOD <- "fipa-request";
+	
+	
+	// Vegan ↔ Restaurant
+	string FIPA_VEGAN_MENU_ASK   <- "vegan_menu_ask";
+	string FIPA_VEGAN_MENU_REPLY <- "vegan_menu_reply";
+	string PROTOCOL_VEGAN_MENU   <- "fipa-request";
+	
+	// Vegan ↔ Guests (what are you eating?)
+	string FIPA_FOOD_QUERY_ASK   <- "food_query_ask";
+	string FIPA_FOOD_QUERY_REPLY <- "food_query_reply";
+	string PROTOCOL_FOOD_QUERY   <- "fipa-request";
+	
+	
+	
+	
 	
 	int guestIdGenerator <- 0;
 	
@@ -81,32 +114,32 @@ global {
 
         // ===== GUESTS (example) =====
         // Party guests
-		create PartyGuest number: party_guests_count {
-		    location <- { rnd(5, world_width - 5), rnd(5, world_height - 5) };
-		    guestId <- guestIdGenerator;
-		    guestIdGenerator <- guestIdGenerator + 1;
-		}
+		//create PartyGuest number: party_guests_count {
+		  //location <- { rnd(5, world_width - 5), rnd(5, world_height - 5) };
+		  // guestId <- guestIdGenerator;
+		   // guestIdGenerator <- guestIdGenerator + 1;
+		//}
 		
 		// Introverts
-		create GuestIntrovert number: introvert_guests_count {
-		    location <- { rnd(5, world_width - 5), rnd(5, world_height - 5) };
-		    guestId <- guestIdGenerator;
-		    guestIdGenerator <- guestIdGenerator + 1;
-		}
+		//create GuestIntrovert number: introvert_guests_count {
+		  //  location <- { rnd(5, world_width - 5), rnd(5, world_height - 5) };
+		 //   guestId <- guestIdGenerator;
+		 //   guestIdGenerator <- guestIdGenerator + 1;
+		//}
 		
 		// Foodies
 		create GuestFoodie number: foodie_guests_count {
 		    location <- { rnd(5, world_width - 5), rnd(5, world_height - 5) };
 		    guestId <- guestIdGenerator;
-		    guestIdGenerator <- guestIdGenerator + 1;
+		   guestIdGenerator <- guestIdGenerator + 1;
 		}
 		
 		// Music fans
-		create GuestMusicFan number: music_guests_count {
-		    location <- { rnd(5, world_width - 5), rnd(5, world_height - 5) };
-		    guestId <- guestIdGenerator;
-		    guestIdGenerator <- guestIdGenerator + 1;
-		}
+		//create GuestMusicFan number: music_guests_count {
+		 //location <- { rnd(5, world_width - 5), rnd(5, world_height - 5) };
+		// guestId <- guestIdGenerator;
+		// guestIdGenerator <- guestIdGenerator + 1;
+		//}
 		
 		// Vegan activists
 		create GuestVeganActivist number: vegan_guests_count {
@@ -114,7 +147,7 @@ global {
 		    guestId <- guestIdGenerator;
 		    guestIdGenerator <- guestIdGenerator + 1;
 		}
-    }
+   }
     
     action write_happiness_stats(string prefix, list<float> data) {
     	
@@ -256,7 +289,12 @@ species Cafe parent: PlaceBase {
     }
 }
 
-species Restaurant parent: PlaceBase {
+species Restaurant parent: PlaceBase skills: [fipa] {
+	
+	bool has_vegan_options <- true;
+	int last_menu_toggle_step <- 0;
+	int MENU_TOGGLE_PERIOD <- 50;
+	
 
     init {
         kind <- "restaurant";
@@ -273,6 +311,36 @@ species Restaurant parent: PlaceBase {
 	        color: rgb(0, 0, 0)
 	        font: font("Arial", 48);
     }
+    
+    reflex handle_requests when: !empty(requests) {
+
+	    message msg_req <- requests[0];
+	    list args <- msg_req.contents;
+	    if (empty(args)) { return; }
+	
+	    string topic <- args[0] as string;
+	
+	    if (topic = FIPA_VEGAN_MENU_ASK) {
+	
+	        string reply <- (has_vegan_options ? "Yes, we have vegan options." : "No vegan options right now.");
+	
+	        do agree message: msg_req contents: [FIPA_VEGAN_MENU_REPLY, has_vegan_options, reply];
+	
+	        // Optional logging (Restaurant doesn't have guestId, so keep it simple)
+	        write "[step=" + cycle + "] [restaurant] VEGAN_MENU_REPLY -> " + reply;
+	    }
+	}
+	    
+    
+    reflex update_menu {
+	    if (cycle - last_menu_toggle_step >= MENU_TOGGLE_PERIOD) {
+	        has_vegan_options <- (rnd(0.0, 1.0) < 0.7); // 70% chance vegan options available
+	        last_menu_toggle_step <- cycle;
+	    }
+	}
+	
+	
+    
 }
 
 species Club parent: PlaceBase {
@@ -362,6 +430,12 @@ species GuestBase skills: [moving, fipa]  {
     
     PlaceBase current_place <- nil;
     
+    PartyGuest group_leader <- nil;
+	int party_join_cycle <- -1;  // cycle when this guest joined the party group (debug/analysis)
+	
+	string current_food <- "none";
+	
+    
     aspect base {
         draw circle(1.8) color: COLOR_GUEST_DEFAULT;
     }
@@ -370,6 +444,14 @@ species GuestBase skills: [moving, fipa]  {
     reflex wander_around when: current_place = nil {
     	do wander;
     }
+    
+    // If I'm in a party group, copy the leader's destination place.
+	// This creates a visible effect: members move to the same place.
+    reflex follow_party_leader when: group_leader != nil {
+    	if (group_leader.current_place != nil and current_place != group_leader.current_place) {
+        	current_place <- group_leader.current_place;
+    	}
+	}
 
     reflex go_or_stay_or_leave_place when: current_place != nil {
     	// distance to target place
@@ -382,6 +464,13 @@ species GuestBase skills: [moving, fipa]  {
 	    // ---- AT THE PLACE ----
 	    else {	// at the place so just move around
 	    	do wander;
+			if (current_place != nil) {
+			    if (current_place.kind = "restaurant" or current_place.kind = "cafe" or current_place.kind = "bar") {
+			        // Simple random meal
+			        current_food <- one_of(["salad", "vegan_bowl", "burger", "steak"]);
+			    }
+			}
+				    	
 	    	if (leave_place_cycle = nil) {
 	    		leave_place_cycle <- cycle + current_place.min_length_stay;
 	    	}
@@ -396,6 +485,8 @@ species GuestBase skills: [moving, fipa]  {
 	    	}
 	    } 
     }
+    
+    
    	
    	// An action to log an event to the conosole
    	// shoudld be a global action but I didn't manage to make it work.
@@ -404,6 +495,17 @@ species GuestBase skills: [moving, fipa]  {
 			write "[step=" + cycle + "] [agent=" + guestIdParam + "] " + event;
 		}
 	}
+	
+	
+	
+	// By default, all guests refuse party invites.
+	// PartyGuest will override this action to allow joining.
+	// ------------------------------------------------------------
+	action handle_party_invite_request(message m) {
+    	do refuse message: m contents: [FIPA_PARTY_INVITE_REPLY, "Not a party guest."];
+    	do end_conversation message: m contents: ["End"];
+	}
+	
     
     // Returns a list of all guests in the COMMUNICATION_RADIUS
     list<GuestBase> get_nearby_guests(int radius) {
@@ -639,6 +741,17 @@ species GuestBase skills: [moving, fipa]  {
     	do end_conversation message: m contents: ['End'];
     }
     
+    action handle_food_query_request(message msg_req) {
+
+	    // Reply with what I currently eat
+	    do agree message: msg_req contents: [FIPA_FOOD_QUERY_REPLY, current_food];
+	
+	    do log(LOG_LEVEL_INFO, guestId,
+	        "FOOD_QUERY_REPLIED -> to=" + (msg_req.sender as GuestBase).guestId
+	        + " | myFood=" + current_food
+	    );
+	}
+    
     reflex say_hello {
     	// must be in a place
 	    if (current_place = nil) { 
@@ -679,73 +792,298 @@ species GuestBase skills: [moving, fipa]  {
 
 species PartyGuest parent: GuestBase {
 
-	// Invites people to party together when at club until group number reaches some max number
-	//   the larger the number of people the faster happiness increases
-	// Only send invites to party, music people. Occasionally send invites also to other
-	
-	// If offered food, when accepting food invites to party together
-	
-	// Say hi to people often, not always
+    // ============================================================
+    // Party grouping (ONLY PartyGuests participate in this mechanic)
+    // ============================================================
+
+    // Members that accepted my invite (I am the leader).
+    list<PartyGuest> party_group_members <- [];
+    int MAX_PARTY_GROUP_SIZE <- 6;
+
+    // Cooldown to avoid spamming invites every cycle.
+    int last_invite_step <- -1000;
+    int INVITE_COOLDOWN  <- 15;
 
     init {
         sociability <- rnd(0.7, 1.0);
-        tolerance <- rnd(0.6, 1.0);
-        generosity <- rnd(0.4, 0.9);
-        // Small happiness update when others say hi back
-		// PartyGuest says hi often and it is not a big deal for them
-        hello_agree_happiness_delta <- 0.05;
+        tolerance   <- rnd(0.6, 1.0);
+        generosity  <- rnd(0.4, 0.9);
+
+        // PartyGuest is not strongly affected by hello replies.
+        hello_agree_happiness_delta  <- 0.05;
         hello_refuse_happiness_delta <- 0.05;
-        
+
         num_cycles_to_wander <- 5;
-		choose_place_probability <- 0.5;
+        choose_place_probability <- 0.5;
     }
-    
+
     aspect base {
         draw circle(2.0) color: COLOR_PARTY_GUEST;
     }
-    
-    reflex adjust_happiness {
-    	// TODO
-    }
-    
-    reflex handle_requests when: !empty(requests) {
-    	// Take the first pending request message
-    	message m <- requests[0];
-        list args <- m.contents;
-        string msg_str <- args[0] as string;
-        
-        if (msg_str = FIPA_HELLO_MSG) {
-        	do handle_hello_request(m);
-        }
-    }
-    
-    reflex handle_agrees when: !empty(agrees) {
-    	// Take the first pending agree message
-    	message m <- agrees[0];
-    	list args <- m.contents;
-    	string msg_str <- args[0] as string;
+
+    // ============================================================
+    // Leader side: send invites in the club
+    // ============================================================
+
+    reflex invite_to_party when: current_place != nil and current_place.kind = "club" {
     	
-    	if (msg_str = FIPA_HELLO_REPLY) {
-    		do handle_hello_agree(m);
-    	}
-    }
-    
-    reflex handle_refuses when: !empty(refuses) {
-    	message m <- refuses[0];
-    	list args <- m.contents;
-    	string msg_str <- args[0] as string;
+    	// Followers must NOT invite others (only leaders invite)
+		if (group_leader != nil) { 
+		    do log(LOG_LEVEL_INFO, guestId, "INVITE_BLOCKED (follower) leader=" + group_leader.guestId);
+		    return; 
+		}
     	
-    	if (msg_str = FIPA_HELLO_REPLY) {
-    		do handle_hello_refuse(m);
-    	}
+
+        // Cooldown check
+        if (cycle - last_invite_step < INVITE_COOLDOWN) { return; }
+
+        // Capacity check
+        if (length(party_group_members) >= MAX_PARTY_GROUP_SIZE) { return; }
+
+        // Find nearby agents
+        list<GuestBase> nearby <- get_nearby_guests(COMMUNICATION_RADIUS);
+
+        // Candidates: ONLY PartyGuests, not myself, not already following a leader,
+        // and not already in my list.
+        list<PartyGuest> candidates <- (nearby where (
+            each != self
+            and (each is PartyGuest)
+            and (each as PartyGuest).group_leader = nil
+            and !(party_group_members contains (each as PartyGuest))
+        )) collect (each as PartyGuest);
+
+        if (empty(candidates)) { return; }
+
+        PartyGuest target <- one_of(candidates);
+
+        // IMPORTANT:
+        // - protocol must be a valid FIPA protocol name -> use "fipa-request"
+        // - we keep our own message type in contents[0] = FIPA_PARTY_INVITE
+        do start_conversation(
+            to: [target],
+            performative: "request",
+            protocol: PROTOCOL_PARTY_INVITE, // you set this to "fipa-request" in global
+            contents: [FIPA_PARTY_INVITE, "Join my party group!"]
+        );
+
+        do log(LOG_LEVEL_INFO, guestId,
+		    "PARTY_INVITE_SENT -> to=" + target.guestId
+		    + " | leaderPlace=" + (current_place != nil ? current_place.kind : "nil")
+		    + " | myMembers=" + length(party_group_members)
+		);
+
+
+        last_invite_step <- cycle;
     }
 
-    reflex enjoy_noise when: current_place != nil {
-        if (current_place.noise > 0.6) {
-            happiness <- happiness + 0.01;
+    // ============================================================
+    // Participant side: handle invite requests
+    // ============================================================
+
+    action handle_party_invite_request_party(message msg_req)  {
+
+        PartyGuest leader <- msg_req.sender as PartyGuest;
+
+        // If I already follow a leader, refuse
+        if (group_leader != nil) {
+            do refuse message: msg_req contents: [FIPA_PARTY_INVITE_REPLY, "Already in a group."];
+            return;
+        }
+
+        // Safety: only join if leader is currently in a club
+        if (leader.current_place = nil or leader.current_place.kind != "club") {
+            do refuse message: msg_req contents: [FIPA_PARTY_INVITE_REPLY, "Leader not at club."];
+            return;
+        }
+
+        // Acceptance probability (simple): higher sociability -> more likely to join
+        float p_accept <- sociability;
+
+        if (rnd(0.0, 1.0) < p_accept) {
+
+            // Join: set my leader pointer
+            group_leader <- leader;
+            party_join_cycle <- cycle;
+
+            // Immediately aim for the leader's place
+            current_place <- leader.current_place;
+
+            do agree message: msg_req contents: [FIPA_PARTY_INVITE_REPLY, "Let's go!"];
+
+            do log(LOG_LEVEL_INFO, guestId,
+			    "PARTY_INVITE_ACCEPTED <- from=" + leader.guestId
+			    + " | joinCycle=" + cycle
+			    + " | leaderMembers=" + length(leader.party_group_members)
+);
+        }
+        else {
+            do refuse message: msg_req contents: [FIPA_PARTY_INVITE_REPLY, "No thanks."];
         }
     }
+
+    // ============================================================
+    // Happiness dynamics: partying in a group increases happiness faster
+    // ============================================================
+
+    reflex adjust_happiness when: current_place != nil {
+
+        // Only apply this logic inside the club
+        if (current_place.kind != "club") { return; }
+
+        float base_increase <- 0.005; // alone in club
+        float group_bonus   <- 0.0;
+
+        // If I am leader: bigger group -> bigger bonus
+        if (!empty(party_group_members)) {
+            group_bonus <- 0.003 * length(party_group_members);
+        }
+
+        // If I am a follower: small bonus for being in a group
+        if (group_leader != nil) {
+            group_bonus <- group_bonus + 0.002;
+        }
+
+        happiness <- min(1.0, happiness + base_increase + group_bonus);
+        
+        if (cycle mod 10 = 0) {
+		    do log(LOG_LEVEL_INFO, guestId,
+		        "HAPPINESS_UPDATE | h=" + happiness
+		        + " | members=" + length(party_group_members)
+		        + " | follower=" + (group_leader != nil ? "yes" : "no")
+		    );
+		}
+    }
+
+    // ============================================================
+    // Cleanup: dissolve group when leaving the club
+    // ============================================================
+
+    reflex dissolve_party_group when: current_place = nil or current_place.kind != "club" {
+    	
+		int released <- length(party_group_members);
+		
+        // Only leader dissolves its member list
+        if (!empty(party_group_members)) {
+
+            loop pg over: party_group_members {
+                if (pg != nil and pg.group_leader = self) {
+                    pg.group_leader <- nil;
+                }
+            }
+
+            party_group_members <- [];
+				do log(LOG_LEVEL_INFO, guestId, "PARTY_GROUP_DISSOLVED | released=" + released);
+            
+        }
+    }
+
+    // ============================================================
+    // Message handling (robust: ignore end_conversation)
+    // ============================================================
+
+    reflex handle_requests when: !empty(requests) {
+
+	    // Take the first pending request message
+	    message msg_req <- requests[0];
+	
+	    // ------------------------------------------------------------
+	    // Robust parsing: some protocol/system messages may have different contents.
+	    // We only process messages that start with a known "topic" string.
+	    // ------------------------------------------------------------
+	    list args <- msg_req.contents;
+	    if (empty(args)) { 
+	        return; 
+	    }
+	
+	    string topic <- args[0] as string;
+	
+	    if (topic = FIPA_HELLO_MSG) {
+	        do handle_hello_request(m: msg_req);
+	    }
+	    else if (topic = FIPA_PARTY_INVITE) {
+		    do handle_party_invite_request_party(msg_req: msg_req);
+		}
+		else if (topic = FIPA_FOOD_QUERY_ASK) {
+		    do handle_food_query_request(msg_req: msg_req); // GuestBase
+		}
+		
+	    else {
+	        // Unknown topic -> ignore safely
+	        return;
+	    }
+	}
+
+
+    reflex handle_agrees when: !empty(agrees) {
+
+	    // Take the first pending agree message
+	    message msg_agree <- agrees[0];
+	
+	    list args <- msg_agree.contents;
+	    if (empty(args)) { 
+	        return; 
+	    }
+	
+	    string topic <- args[0] as string;
+	
+	    if (topic = FIPA_HELLO_REPLY) {
+	        do handle_hello_agree(m: msg_agree);
+	    }
+	    else if (topic = FIPA_PARTY_INVITE_REPLY) {
+	
+	        PartyGuest joiner <- msg_agree.sender as PartyGuest;
+	
+	        // Avoid duplicates and respect capacity
+	        if (!(party_group_members contains joiner) and length(party_group_members) < MAX_PARTY_GROUP_SIZE) {
+	            party_group_members <- party_group_members + [joiner];
+	
+	            // Optional: leader feels happier when someone joins
+	            happiness <- min(1.0, happiness + 0.02);
+	
+	            do log(LOG_LEVEL_INFO, guestId,
+				    "PARTY_MEMBER_ADDED <- member=" + joiner.guestId
+				    + " | newMembers=" + length(party_group_members)
+				);
+
+	        }
+	
+	        // NOTE: Do NOT call end_conversation here when using a real protocol.
+	        // The protocol handles termination.
+	    }
+	    else {
+	        return;
+	    }
+	}
+
+
+	    reflex handle_refuses when: !empty(refuses) {
+	
+	    // Take the first pending refuse message
+	    message msg_refuse <- refuses[0];
+	
+	    list args <- msg_refuse.contents;
+	    if (empty(args)) { 
+	        return; 
+	    }
+	
+	    string topic <- args[0] as string;
+	
+	    if (topic = FIPA_HELLO_REPLY) {
+	        do handle_hello_refuse(m: msg_refuse);
+	    }
+	    else if (topic = FIPA_PARTY_INVITE_REPLY) {
+	        // Invitation refused -> nothing to do
+	        do log(LOG_LEVEL_DEBUG, guestId, "PARTY_INVITE_REFUSED by " + (msg_refuse.sender as GuestBase).guestId);
+	
+	        // NOTE: Do NOT call end_conversation here when using a real protocol.
+	    }
+	    else {
+	        return;
+	    }
+	}
+
 }
+
 
 species GuestIntrovert parent: GuestBase {
 
@@ -770,21 +1108,30 @@ species GuestIntrovert parent: GuestBase {
         draw circle(2) color: COLOR_INTROVERT;
     }
     
-    reflex adjust_happiness {
-    	// React to noise
-    	happiness <- happiness - max(0, current_place.noise - tolerance) * 0.02;
-    }
+    reflex adjust_happiness when: current_place != nil {
+	    happiness <- happiness - (max(0.0, current_place.noise - tolerance) * 0.02);
+	    happiness <- max(0.0, min(1.0, happiness));
+	}
+
     
     reflex handle_requests when: !empty(requests) {
-    	// Take the first pending request message
-    	message m <- requests[0];
-        list args <- m.contents;
-        string msg_str <- args[0] as string;
-        
-        if (msg_str = FIPA_HELLO_MSG) {
-        	do handle_hello_request(m);
-        }
-    }
+
+	    // Take the first pending request message
+	    message m <- requests[0];
+	    list args <- m.contents;
+	    if (empty(args)) { return; }
+	
+	    string msg_str <- args[0] as string;
+	
+	    if (msg_str = FIPA_HELLO_MSG) {
+	        do handle_hello_request(m: m);
+	    }
+	    else if (msg_str = FIPA_FOOD_QUERY_ASK) {
+	        // Uses GuestBase default handler
+	        do handle_food_query_request(msg_req: m);
+	    }
+	}
+
     
     reflex handle_agrees when: !empty(agrees) {
     	// Take the first pending agree message
@@ -809,73 +1156,217 @@ species GuestIntrovert parent: GuestBase {
 }
 
 species GuestMusicFan parent: GuestBase {
-	
-	// happiness increases at concert or club when their genre matches
-	//   the genre in the places must switch every some number of steps
 
+    // ============================================================
+    // MUSIC FAN TRAITS
+    // ============================================================
+
+    // The favorite genre of this music fan.
     string favorite_genre <- one_of(["rock", "pop"]);
+
+    // Prevent spamming genre questions.
+    int last_genre_ask_step <- -1000;
+    int GENRE_ASK_COOLDOWN <- 25;
 
     init {
         sociability <- rnd(0.4, 0.7);
-        tolerance <- rnd(0.5, 0.8);
-        generosity <- rnd(0.2, 0.5);
-        // A music fan is not much affected by replies to hello
-        hello_agree_happiness_delta <- 0.05;
+        tolerance   <- rnd(0.5, 0.8);
+        generosity  <- rnd(0.2, 0.5);
+
+        // Music fans are not strongly affected by hello replies.
+        hello_agree_happiness_delta  <- 0.05;
         hello_refuse_happiness_delta <- 0.05;
-        
+
         num_cycles_to_wander <- 10;
-		choose_place_probability <- 0.5;
+        choose_place_probability <- 0.5;
     }
-    
+
     aspect base {
         draw circle(2) color: COLOR_MUSIC_FAN;
     }
-    
-    reflex adjust_happiness {
-    	// concert happiness
-    	if (current_place != nil) {
-    		happiness <- happiness + 0.03;
-    	}
+
+    // ============================================================
+    // HAPPINESS UPDATE
+    // ============================================================
+
+    reflex adjust_happiness when: current_place != nil {
+
+        // Simple baseline: being at any place increases happiness a bit.
+        // (You can later refine: bigger boost at concert/club, etc.)
+        happiness <- happiness + 0.03;
+
+        // Always clamp happiness to [0, 1] every cycle.
+        happiness <- max(0.0, min(1.0, happiness));
     }
 
-    reflex handle_requests when: !empty(requests) {
-    	// Take the first pending request message
-    	message m <- requests[0];
-        list args <- m.contents;
-        string msg_str <- args[0] as string;
-        
-        if (msg_str = FIPA_HELLO_MSG) {
-        	do handle_hello_request(m);
+    // ============================================================
+    // GENRE CHAT (FIPA)
+    // ============================================================
+
+    // Reply with my favorite genre when another music fan asks.
+    action handle_genre_ask_request(message msg_req) {
+
+        // Sometimes ignore because I'm "listening to music".
+        float p_reply <- 0.75;
+
+        if (rnd(0.0, 1.0) > p_reply) {
+            // Refuse with a genre-reply topic (so requester can route it).
+            do refuse message: msg_req contents: [FIPA_GENRE_REPLY, "Can't talk right now."];
+
+            do log(LOG_LEVEL_INFO, guestId,
+                "GENRE_ASK_IGNORED from=" + (msg_req.sender as GuestBase).guestId
+            );
+            return;
         }
+
+        // Agree and return the genre in contents[1].
+        do agree message: msg_req contents: [FIPA_GENRE_REPLY, favorite_genre];
+
+        do log(LOG_LEVEL_INFO, guestId,
+            "GENRE_ASK_REPLIED to=" + (msg_req.sender as GuestBase).guestId
+            + " | myGenre=" + favorite_genre
+        );
     }
-    
+
+    // Handle an agree reply containing the other agent's favorite genre.
+    action handle_genre_reply_agree(message msg_agree) {
+
+        // GAMA: message contents must be treated as a list.
+        list args <- msg_agree.contents;
+
+        // Safety check.
+        if (length(args) < 2) {
+            // End the conversation anyway (requester side should close).
+            do end_conversation message: msg_agree contents: ["End"];
+            return;
+        }
+
+        string other_genre <- args[1] as string;
+        GuestBase other <- msg_agree.sender as GuestBase;
+
+        do log(LOG_LEVEL_INFO, guestId,
+            "GENRE_REPLY_RECEIVED <- from=" + other.guestId
+            + " | theirGenre=" + other_genre
+            + " | myGenre=" + favorite_genre
+        );
+
+        // Optional: happiness boost if genres match.
+        if (other_genre = favorite_genre) {
+            happiness <- happiness + 0.02;
+
+            // Clamp after bonus too (important, otherwise happiness can exceed 1.0).
+            happiness <- max(0.0, min(1.0, happiness));
+
+            do log(LOG_LEVEL_INFO, guestId, "GENRE_MATCH_BONUS (+0.02)");
+        }
+
+       
+    }
+
+    // ============================================================
+    // INITIATE GENRE QUESTIONS
+    // ============================================================
+
+    reflex ask_other_music_fans_genre when: current_place != nil {
+
+        // Cooldown
+        if (cycle - last_genre_ask_step < GENRE_ASK_COOLDOWN) { return; }
+
+        // Find nearby guests and keep ONLY music fans.
+        list<GuestBase> nearby <- get_nearby_guests(COMMUNICATION_RADIUS);
+        list<GuestMusicFan> music_candidates <- (nearby where (each is GuestMusicFan and each != self))
+            collect (each as GuestMusicFan);
+
+        if (empty(music_candidates)) { return; }
+
+        // Random target.
+        GuestMusicFan target <- one_of(music_candidates);
+
+        do start_conversation(
+            to: [target],
+            performative: "request",
+            protocol: PROTOCOL_GENRE_CHAT, // should be a valid FIPA protocol name, e.g. "fipa-request"
+            contents: [FIPA_GENRE_ASK, "What genre do you like?"]
+        );
+
+        do log(LOG_LEVEL_INFO, guestId, "GENRE_ASK_SENT -> to=" + target.guestId);
+
+        last_genre_ask_step <- cycle;
+    }
+
+    // ============================================================
+    // MESSAGE ROUTING (REQUEST / AGREE / REFUSE)
+    // ============================================================
+
+    reflex handle_requests when: !empty(requests) {
+
+        message msg_req <- requests[0];
+        list args <- msg_req.contents;
+        if (empty(args)) { return; }
+
+        string topic <- args[0] as string;
+
+        if (topic = FIPA_HELLO_MSG) {
+            do handle_hello_request(m: msg_req);
+        }
+        else if (topic = FIPA_GENRE_ASK) {
+            do handle_genre_ask_request(msg_req: msg_req);
+        }
+        else if (topic = FIPA_FOOD_QUERY_ASK) {
+	    do handle_food_query_request(msg_req: msg_req); // GuestBase
+	}
+        
+        // else: ignore unknown topics
+    }
+
     reflex handle_agrees when: !empty(agrees) {
-    	// Take the first pending agree message
-    	message m <- agrees[0];
-    	list args <- m.contents;
-    	string msg_str <- args[0] as string;
-    	
-    	if (msg_str = FIPA_HELLO_REPLY) {
-    		do handle_hello_agree(m);
-    	}
+
+        message msg_agree <- agrees[0];
+        list args <- msg_agree.contents;
+        if (empty(args)) { return; }
+
+        string topic <- args[0] as string;
+
+        if (topic = FIPA_HELLO_REPLY) {
+            do handle_hello_agree(m: msg_agree);
+        }
+        else if (topic = FIPA_GENRE_REPLY) {
+            do handle_genre_reply_agree(msg_agree: msg_agree);
+        }
+        // else: ignore unknown topics
     }
-    
+
     reflex handle_refuses when: !empty(refuses) {
-    	message m <- refuses[0];
-    	list args <- m.contents;
-    	string msg_str <- args[0] as string;
-    	
-    	if (msg_str = FIPA_HELLO_REPLY) {
-    		do handle_hello_refuse(m);
-    	}
+
+        message msg_refuse <- refuses[0];
+        list args <- msg_refuse.contents;
+        if (empty(args)) { return; }
+
+        string topic <- args[0] as string;
+
+        if (topic = FIPA_HELLO_REPLY) {
+            do handle_hello_refuse(m: msg_refuse);
+        }
+        else if (topic = FIPA_GENRE_REPLY) {
+
+            do log(LOG_LEVEL_INFO, guestId,
+                "GENRE_REPLY_REFUSED <- from=" + (msg_refuse.sender as GuestBase).guestId
+            );
+
+          
+        }
+        // else: ignore unknown topics
     }
 }
+
 
 species GuestFoodie parent: GuestBase {
 	
 	// happiness increases at restaurant, bar, cafe
 	
-	// 
+	int last_food_offer_step <- -1000;
+	int FOOD_OFFER_COOLDOWN <- 30;
+	
 	
 	init {
         sociability <- rnd(0.4, 0.7);
@@ -893,41 +1384,172 @@ species GuestFoodie parent: GuestBase {
         draw circle(2) color: COLOR_FOODIE;
     }
     
+    
+    // Default handling of food offers (can be overridden by specific guests)
+	action handle_food_offer_request(message msg_req) {
+	
+	    // Acceptance probability based on generosity
+	    float p_accept <- generosity;
+	
+	    if (rnd(0.0, 1.0) < p_accept) {
+	
+	        // Accept the food
+	        happiness <- happiness + 0.05;
+	        happiness <- max(0.0, min(1.0, happiness));
+	
+	        do agree message: msg_req contents: [FIPA_FOOD_REPLY, "Thanks!"];
+	
+	        do log(LOG_LEVEL_INFO, guestId,
+	            "FOOD_OFFER_ACCEPTED <- from=" + (msg_req.sender as GuestBase).guestId
+	        );
+	    }
+	    else {
+	        // Refuse politely
+	        do refuse message: msg_req contents: [FIPA_FOOD_REPLY, "No thanks."];
+	
+	        do log(LOG_LEVEL_INFO, guestId,
+	            "FOOD_OFFER_REFUSED <- from=" + (msg_req.sender as GuestBase).guestId
+	        );
+	    }
+	}
+	
+	action handle_food_reply_agree(message msg_agree) {
+
+	    // Foodie feels good when others accept food
+	    happiness <- happiness + 0.04;
+	    happiness <- max(0.0, min(1.0, happiness));
+	
+	    do log(LOG_LEVEL_INFO, guestId,
+	        "FOOD_SHARED_SUCCESS <- with=" + (msg_agree.sender as GuestBase).guestId
+	    );
+	}
+	
+	action handle_food_reply_refuse(message msg_refuse) {
+
+	    // Small disappointment
+	    happiness <- happiness - 0.02;
+	    happiness <- max(0.0, min(1.0, happiness));
+	
+	    do log(LOG_LEVEL_INFO, guestId,
+	        "FOOD_SHARED_REFUSED <- by=" + (msg_refuse.sender as GuestBase).guestId
+	    );
+	}
+	
+	
+    
+    
+    
+    reflex offer_food when: current_place != nil {
+
+    	// Only offer food where food makes sense
+	    if (!(current_place.kind = "restaurant"
+	        or current_place.kind = "cafe"
+	        or current_place.kind = "bar")) {
+	        return;
+	    }
+	
+	    // Cooldown to avoid spam
+	    if (cycle - last_food_offer_step < FOOD_OFFER_COOLDOWN) { return; }
+	
+	    // Find nearby guests (any type), excluding myself
+	    list<GuestBase> nearby <- get_nearby_guests(COMMUNICATION_RADIUS)
+	        where (each != self);
+	
+	    if (empty(nearby)) { return; }
+	
+	    GuestBase target <- one_of(nearby);
+	
+	    do start_conversation(
+	        to: [target],
+	        performative: "request",
+	        protocol: PROTOCOL_FOOD,
+	        contents: [FIPA_FOOD_OFFER, "Would you like some food?"]
+	    );
+	
+	    do log(LOG_LEVEL_INFO, guestId,
+	        "FOOD_OFFER_SENT -> to=" + target.guestId
+	        + " | place=" + current_place.kind
+	    );
+	
+	    last_food_offer_step <- cycle;
+	}
+    
+    
     reflex adjust_happiness {
 		// TODO
     }
 
 	reflex handle_requests when: !empty(requests) {
-    	// Take the first pending request message
-    	message m <- requests[0];
-        list args <- m.contents;
-        string msg_str <- args[0] as string;
-        
-        if (msg_str = FIPA_HELLO_MSG) {
-        	do handle_hello_request(m);
-        }
-    }
+
+	    // Take the first pending request message
+	    message msg_req <- requests[0];
+	
+	    // Safely parse contents
+	    list args <- msg_req.contents;
+	    if (empty(args)) { return; }
+	
+	    string topic <- args[0] as string;
+	
+	    // Route by our topic string (contents[0])
+	    if (topic = FIPA_HELLO_MSG) {
+	        do handle_hello_request(m: msg_req);
+	    }
+	    else if (topic = FIPA_FOOD_OFFER) {
+	        // Default handler is defined in GuestBase
+	        do handle_food_offer_request(msg_req: msg_req);
+	    }
+	    else {
+	        // Unknown topic -> ignore
+	        return;
+	    }
+	}
+
     
     reflex handle_agrees when: !empty(agrees) {
-    	// Take the first pending agree message
-    	message m <- agrees[0];
-    	list args <- m.contents;
-    	string msg_str <- args[0] as string;
-    	
-    	if (msg_str = FIPA_HELLO_REPLY) {
-    		do handle_hello_agree(m);
-    	}
-    }
+
+	    // Take the first pending agree message
+	    message msg_agree <- agrees[0];
+	
+	    list args <- msg_agree.contents;
+	    if (empty(args)) { return; }
+	
+	    string topic <- args[0] as string;
+	
+	    if (topic = FIPA_HELLO_REPLY) {
+	        do handle_hello_agree(m: msg_agree);
+	    }
+	    else if (topic = FIPA_FOOD_REPLY) {
+	        // Foodie-specific: someone accepted my offer
+	        do handle_food_reply_agree(msg_agree: msg_agree);
+	    }
+	    else {
+	        return;
+	    }
+	}
+
     
     reflex handle_refuses when: !empty(refuses) {
-    	message m <- refuses[0];
-    	list args <- m.contents;
-    	string msg_str <- args[0] as string;
-    	
-    	if (msg_str = FIPA_HELLO_REPLY) {
-    		do handle_hello_refuse(m);
-    	}
-    }
+
+	    // Take the first pending refuse message
+	    message msg_refuse <- refuses[0];
+	
+	    list args <- msg_refuse.contents;
+	    if (empty(args)) { return; }
+	
+	    string topic <- args[0] as string;
+	
+	    if (topic = FIPA_HELLO_REPLY) {
+	        do handle_hello_refuse(m: msg_refuse);
+	    }
+	    else if (topic = FIPA_FOOD_REPLY) {
+	        // Foodie-specific: someone refused my offer
+	        do handle_food_reply_refuse(msg_refuse: msg_refuse);
+	    }
+	    else {
+	        return;
+	    }
+	}
+
 
     reflex share_food {
         // TODO: using FIPA
@@ -936,11 +1558,76 @@ species GuestFoodie parent: GuestBase {
 
 species GuestVeganActivist parent: GuestBase {
 	
+	int last_menu_ask_step <- -1000;
+	int VEGAN_MENU_COOLDOWN <- 40;
+
+	int last_food_query_step <- -1000;
+	int FOOD_QUERY_COOLDOWN <- 30;
+
+	// Vegan activist's current belief about vegan availability (for behavior/happiness)
+	bool believes_vegan_available <- false;
+	
+	
 	float conviction <- rnd(0.6, 1.0);
 	
 	aspect base {
         draw circle(2) color: COLOR_VEGAN_ACTIVIST;
     }
+    
+    action handle_vegan_menu_reply_agree(message msg_agree) {
+
+	    list args <- msg_agree.contents;
+	    if (length(args) < 3) { return; }
+	
+	    bool available <- args[1] as bool;
+	    string text <- args[2] as string;
+	
+	    believes_vegan_available <- available;
+	
+	    do log(LOG_LEVEL_INFO, guestId,
+	        "VEGAN_MENU_REPLY_RECEIVED <- available=" + available + " | msg=" + text
+	    );
+	
+	    // Adjust happiness based on the answer + conviction
+	    if (available) {
+	        happiness <- happiness + (0.03 * conviction);
+	    } else {
+	        happiness <- happiness - (0.05 * conviction);
+	    }
+	
+	    happiness <- max(0.0, min(1.0, happiness));
+	}
+	
+	action handle_food_query_reply_agree(message msg_agree) {
+
+    	list args <- msg_agree.contents;
+	    if (length(args) < 2) { return; }
+	
+	    string their_food <- args[1] as string;
+	    GuestBase other <- msg_agree.sender as GuestBase;
+	
+	    do log(LOG_LEVEL_INFO, guestId,
+	        "FOOD_QUERY_REPLY_RECEIVED <- from=" + other.guestId + " | food=" + their_food
+	    );
+	
+	    // If they eat meat: activist gets upset and reduces tolerance toward them
+	    bool is_meat <- (their_food = "burger" or their_food = "steak");
+	
+	    if (is_meat) {
+	        happiness <- happiness - (0.04 * conviction);
+	        happiness <- max(0.0, min(1.0, happiness));
+	
+	        do log(LOG_LEVEL_INFO, guestId,
+	            "VEGAN_TELL_OFF -> target=" + other.guestId + " | reason=" + their_food
+	        );
+	    } else {
+	        // Positive reinforcement
+	        happiness <- happiness + (0.02 * conviction);
+	        happiness <- max(0.0, min(1.0, happiness));
+	    }
+	}
+	
+	    
     
     reflex adjust_happiness {
     	// TODO
@@ -959,37 +1646,111 @@ species GuestVeganActivist parent: GuestBase {
 		choose_place_probability <- 0.3;
     }
     
+    reflex ask_restaurant_for_vegan_food when: current_place != nil {
+
+	    // Only ask when at restaurant
+	    if (current_place.kind != "restaurant") { return; }
+	
+	    if (cycle - last_menu_ask_step < VEGAN_MENU_COOLDOWN) { return; }
+	
+	    // Find the actual Restaurant agent (you have exactly one Restaurant in ALL_PLACES)
+	    // Safer: pick the place instance that is Restaurant
+	    Restaurant r <- one_of(Restaurant);
+	
+	    do start_conversation(
+	        to: [r],
+	        performative: "request",
+	        protocol: PROTOCOL_VEGAN_MENU,
+	        contents: [FIPA_VEGAN_MENU_ASK, "Do you have vegan options?"]
+	    );
+	
+	    do log(LOG_LEVEL_INFO, guestId, "VEGAN_MENU_ASK_SENT -> to=restaurant");
+	
+	    last_menu_ask_step <- cycle;
+	}
+	
+	reflex ask_others_what_they_eat when: current_place != nil {
+
+	    if (cycle - last_food_query_step < FOOD_QUERY_COOLDOWN) { return; }
+	
+	    list<GuestBase> nearby <- get_nearby_guests(COMMUNICATION_RADIUS)
+	        where (each != self);
+	
+	    if (empty(nearby)) { return; }
+	
+	    GuestBase target <- one_of(nearby);
+	
+	    do start_conversation(
+	        to: [target],
+	        performative: "request",
+	        protocol: PROTOCOL_FOOD_QUERY,
+	        contents: [FIPA_FOOD_QUERY_ASK, "What are you eating?"]
+	    );
+	
+	    do log(LOG_LEVEL_INFO, guestId, "FOOD_QUERY_SENT -> to=" + target.guestId);
+	
+	    last_food_query_step <- cycle;
+	}
+	
+    
+    
     reflex handle_requests when: !empty(requests) {
-    	// Take the first pending request message
-    	message m <- requests[0];
-        list args <- m.contents;
-        string msg_str <- args[0] as string;
-        
-        if (msg_str = FIPA_HELLO_MSG) {
-        	do handle_hello_request(m);
-        }
-    }
+
+	    message m <- requests[0];
+	    list args <- m.contents;
+	    if (empty(args)) { return; }
+	
+	    string msg_str <- args[0] as string;
+	
+	    if (msg_str = FIPA_HELLO_MSG) {
+	        do handle_hello_request(m: m);
+	    }
+	    else if (msg_str = FIPA_FOOD_QUERY_ASK) {
+	        do handle_food_query_request(msg_req: m); // GuestBase
+	    }
+	    // Vegan menu ask is sent TO restaurant, so Vegan usually won't receive FIPA_VEGAN_MENU_ASK
+	}
+
     
     reflex handle_agrees when: !empty(agrees) {
-    	// Take the first pending agree message
-    	message m <- agrees[0];
-    	list args <- m.contents;
-    	string msg_str <- args[0] as string;
-    	
-    	if (msg_str = FIPA_HELLO_REPLY) {
-    		do handle_hello_agree(m);
-    	}
-    }
+
+    message m <- agrees[0];
+    list args <- m.contents;
+	    if (empty(args)) { return; }
+	
+	    string msg_str <- args[0] as string;
+	
+	    if (msg_str = FIPA_HELLO_REPLY) {
+	        do handle_hello_agree(m: m);
+	    }
+	    else if (msg_str = FIPA_VEGAN_MENU_REPLY) {
+	        do handle_vegan_menu_reply_agree(msg_agree: m);
+	    }
+	    else if (msg_str = FIPA_FOOD_QUERY_REPLY) {
+	        do handle_food_query_reply_agree(msg_agree: m);
+	    }
+	}
+
     
     reflex handle_refuses when: !empty(refuses) {
-    	message m <- refuses[0];
-    	list args <- m.contents;
-    	string msg_str <- args[0] as string;
-    	
-    	if (msg_str = FIPA_HELLO_REPLY) {
-    		do handle_hello_refuse(m);
-    	}
-    }
+
+	    message m <- refuses[0];
+	    list args <- m.contents;
+	    if (empty(args)) { return; }
+	
+	    string msg_str <- args[0] as string;
+	
+	    if (msg_str = FIPA_HELLO_REPLY) {
+	        do handle_hello_refuse(m: m);
+	    }
+	    else if (msg_str = FIPA_VEGAN_MENU_REPLY) {
+	        do log(LOG_LEVEL_INFO, guestId, "VEGAN_MENU_REPLY_REFUSED");
+	    }
+	    else if (msg_str = FIPA_FOOD_QUERY_REPLY) {
+	        do log(LOG_LEVEL_INFO, guestId, "FOOD_QUERY_REPLY_REFUSED");
+	    }
+	}
+
 
     reflex confront_foodies {
         // TODO: using FIPA
@@ -1034,45 +1795,17 @@ experiment NightlifeGUI type: gui {
 }
 
 
+
 // TODO:
-// 1. Add functionality of going to places
+// party guest inviting others to groups
 
-// 1.1. Display statistics information
+// music fan asking other music fans which genre they like
 
-// 2.1 In a club party guests invite others to their groups, happiness changes based on response
-//     Introverts also become less happy when invited to groups
+// foodie sharing food with others
 
-// 2.2 Menu inquiry in Bar, Restaurant, Cafe (VeganActivist), ordering food
+// vegan activist asking restaurant if they have vegan food
+// vegan activist asking asking other which food they are having
+//   tell others off if they are eating meat
 
-// 2.3 Vegan activist inquires what food the guests are eating
-
-// 3. Add functionality of sharing food / drinks (vegan/ not vegan)
-
-// 3.3 Music genre debate in club and concert:
-//     Music fan sends an inform or request about what genre they like
-
-
-
-
-
-
-
-// 5.5 Music fans getting into their own groups and staying in them for longer
-
-// 6. From time to time calculate statistics and show them
-
-// 7. Change happiness based on guest type and how many people there are nearby
-
-
-
-// 2. Add functionality of becoming hungry and going to get food/drinks
-//    Choosing to go to bar/restaurant is less likely when guest is full
-
-// 4. Add functionality of getting in groups in bar, club, concert
-
-
-// 5. Add functionality of club/concert playing different type of music (rock/pop) and affecting the music fans
-
-
-
+// reinforcement learning
 
