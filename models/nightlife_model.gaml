@@ -46,7 +46,7 @@ global {
 	int LOG_LEVEL_PRESENTATION <- 2;
 	int LOG_LEVEL_WARNING <- 3;
 
-	int min_log_level <- LOG_LEVEL_INFO;
+	int min_log_level <- LOG_LEVEL_PRESENTATION;
 
 	
 	// Party group invitations (FIPA message keys)
@@ -411,7 +411,7 @@ species GuestBase skills: [moving, fipa]  {
 	float hello_refuse_happiness_delta;
 	
 	float BASELINE_HAPPINESS <- 0.5;
-	float HAPPINESS_DECAY_RATE <- 0.01;
+	float HAPPINESS_DECAY_RATE <- 0.005;
     
     // Last time-step the guest said "hello"
     int last_hello_step <- -1000;   // long a
@@ -436,6 +436,12 @@ species GuestBase skills: [moving, fipa]  {
 	int party_join_cycle <- -1;  // cycle when this guest joined the party group (debug/analysis)
 	
 	string current_food <- "none";
+	
+	map<string, float> place_preferences;
+	float learning_rate <- 0.3;
+	
+	float happiness_before_place <- nil;
+
 	
     
     aspect base {
@@ -474,6 +480,7 @@ species GuestBase skills: [moving, fipa]  {
 			}
 				    	
 	    	if (leave_place_cycle = nil) {
+	    		happiness_before_place <- happiness;
 	    		leave_place_cycle <- cycle + current_place.min_length_stay;
 	    	}
 	    	if (cycle > leave_place_cycle and rnd(0.0, 1.0) <= leave_place_probability) {
@@ -481,6 +488,20 @@ species GuestBase skills: [moving, fipa]  {
 	    		do log(LOG_LEVEL_INFO, guestId,
 	    			"Guest " + guestId + " is leaving a place " + current_place.kind
 	    		);
+	    		
+	    		float reward <- happiness - happiness_before_place;
+				
+				string k <- current_place.kind;
+				float old_q <- place_preferences[k];
+				
+				place_preferences[k] <- old_q + learning_rate * (reward - old_q);
+				
+				do log(LOG_LEVEL_DEBUG, guestId,
+				    "RL_UPDATE | place=" + k
+				    + " reward=" + reward
+				    + " Q=" + place_preferences[k]
+				);
+	    		
 	    		last_in_place_cycle <- cycle;
 	    		leave_place_cycle <- nil;
 	    		current_place <- nil;
@@ -603,14 +624,9 @@ species GuestBase skills: [moving, fipa]  {
 	    float social_score <- sociability + (sociability - 0.5) * p.social_pressure;
 	
 	    // Combine both factors with equal importance
-		float score <- (0.5 * noise_score) + (0.5 * social_score);
+		float score <- (0.2 * noise_score) + (0.2 * social_score) + (0.6 * place_preferences[p.kind]);
 	
 	    return score;
-	}
-	
-	// TODO: move to individual Guest types
-	float score_place_specific(PlaceBase p) {
-		return 0.0;
 	}
 	
 
@@ -810,7 +826,6 @@ species GuestBase skills: [moving, fipa]  {
     		return;
     	}
     	
-    	// TODO: log p_hello and check that it is reasonable
     	float crowd_factor <- min(1.0, n / 6.0);
 	    float place_factor <- current_place.social_pressure;
 	    float p_hello <- sociability * crowd_factor * place_factor;
@@ -857,6 +872,11 @@ species PartyGuest parent: GuestBase {
 
         num_cycles_to_wander <- 5;
         choose_place_probability <- 0.5;
+        
+        place_preferences <- map([]);
+		loop p over: ALL_PLACES {
+		    place_preferences[p.kind] <- 0.0;
+		}
     }
 
     aspect base {
@@ -1144,6 +1164,11 @@ species GuestIntrovert parent: GuestBase {
         
         num_cycles_to_wander <- 25;
 		choose_place_probability <- 0.3;
+		
+		place_preferences <- map([]);
+		loop p over: ALL_PLACES {
+		    place_preferences[p.kind] <- 0.0;
+		}
     }
     
     aspect base {
@@ -1221,6 +1246,11 @@ species GuestMusicFan parent: GuestBase {
 
         num_cycles_to_wander <- 10;
         choose_place_probability <- 0.5;
+        
+        place_preferences <- map([]);
+		loop p over: ALL_PLACES {
+		    place_preferences[p.kind] <- 0.0;
+		}
     }
 
     aspect base {
@@ -1429,6 +1459,11 @@ species GuestFoodie parent: GuestBase {
         
         num_cycles_to_wander <- 10;
 		choose_place_probability <- 0.3;
+		
+		place_preferences <- map([]);
+		loop p over: ALL_PLACES {
+		    place_preferences[p.kind] <- 0.0;
+		}
     }
     
     aspect base {
@@ -1613,11 +1648,6 @@ species GuestFoodie parent: GuestBase {
 	        return;
 	    }
 	}
-
-
-    reflex share_food {
-        // TODO: using FIPA
-    }
 }
 
 species GuestVeganActivist parent: GuestBase {
@@ -1722,6 +1752,11 @@ species GuestVeganActivist parent: GuestBase {
         
         num_cycles_to_wander <- 15;
 		choose_place_probability <- 0.3;
+		
+		place_preferences <- map([]);
+		loop p over: ALL_PLACES {
+		    place_preferences[p.kind] <- 0.0;
+		}
     }
     
     reflex ask_restaurant_for_vegan_food when: current_place != nil {
@@ -1828,11 +1863,6 @@ species GuestVeganActivist parent: GuestBase {
 	        do log(LOG_LEVEL_INFO, guestId, "FOOD_QUERY_REPLY_REFUSED");
 	    }
 	}
-
-
-    reflex confront_foodies {
-        // TODO: using FIPA
-    }
 }
 
 
