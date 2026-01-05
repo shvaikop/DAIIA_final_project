@@ -49,7 +49,6 @@ global {
 	int min_log_level <- LOG_LEVEL_INFO;
 
 	
-	
 	// Party group invitations (FIPA message keys)
 	string PROTOCOL_PARTY_INVITE <- "fipa-request";
 	string FIPA_PARTY_INVITE <- "party_invite";
@@ -114,18 +113,18 @@ global {
 
         // ===== GUESTS (example) =====
         // Party guests
-		//create PartyGuest number: party_guests_count {
-		  //location <- { rnd(5, world_width - 5), rnd(5, world_height - 5) };
-		  // guestId <- guestIdGenerator;
-		   // guestIdGenerator <- guestIdGenerator + 1;
-		//}
+		create PartyGuest number: party_guests_count {
+		  location <- { rnd(5, world_width - 5), rnd(5, world_height - 5) };
+		   guestId <- guestIdGenerator;
+		    guestIdGenerator <- guestIdGenerator + 1;
+		}
 		
 		// Introverts
-		//create GuestIntrovert number: introvert_guests_count {
-		  //  location <- { rnd(5, world_width - 5), rnd(5, world_height - 5) };
-		 //   guestId <- guestIdGenerator;
-		 //   guestIdGenerator <- guestIdGenerator + 1;
-		//}
+		create GuestIntrovert number: introvert_guests_count {
+		    location <- { rnd(5, world_width - 5), rnd(5, world_height - 5) };
+		    guestId <- guestIdGenerator;
+		    guestIdGenerator <- guestIdGenerator + 1;
+		}
 		
 		// Foodies
 		create GuestFoodie number: foodie_guests_count {
@@ -135,11 +134,11 @@ global {
 		}
 		
 		// Music fans
-		//create GuestMusicFan number: music_guests_count {
-		 //location <- { rnd(5, world_width - 5), rnd(5, world_height - 5) };
-		// guestId <- guestIdGenerator;
-		// guestIdGenerator <- guestIdGenerator + 1;
-		//}
+		create GuestMusicFan number: music_guests_count {
+		 location <- { rnd(5, world_width - 5), rnd(5, world_height - 5) };
+		 guestId <- guestIdGenerator;
+		 guestIdGenerator <- guestIdGenerator + 1;
+		}
 		
 		// Vegan activists
 		create GuestVeganActivist number: vegan_guests_count {
@@ -410,6 +409,9 @@ species GuestBase skills: [moving, fipa]  {
     
     float hello_agree_happiness_delta;
 	float hello_refuse_happiness_delta;
+	
+	float BASELINE_HAPPINESS <- 0.5;
+	float HAPPINESS_DECAY_RATE <- 0.01;
     
     // Last time-step the guest said "hello"
     int last_hello_step <- -1000;   // long a
@@ -494,6 +496,46 @@ species GuestBase skills: [moving, fipa]  {
 		if (level >= min_log_level) {
 			write "[step=" + cycle + "] [agent=" + guestIdParam + "] " + event;
 		}
+	}
+	
+	
+	// Applies a bounded happiness delta with diminishing returns
+	action apply_happiness_delta(float delta) {
+	    if (delta > 0) {
+	        happiness <- happiness + (1.0 - happiness) * delta;
+	    } else {
+	        happiness <- happiness + happiness * delta; // delta < 0
+	    }
+	    happiness <- max(0.0, min(1.0, happiness));
+	}
+	
+	reflex decay_happiness
+	when: cycle mod 5 = 0 {
+	
+	    // Pull happiness slightly toward baseline
+	    happiness <- happiness + (BASELINE_HAPPINESS - happiness) * HAPPINESS_DECAY_RATE;
+	
+	    happiness <- max(0.0, min(1.0, happiness));
+	}
+	
+	reflex adjust_happiness_social_density
+	when: current_place != nil and cycle mod 5 = 0 {
+	
+	    list<GuestBase> nearby <- get_nearby_guests(SOCIAL_DENSITY_RADIUS);
+	
+	    // Preferred crowd size based on sociability
+		float preferred <- sociability * 6.0;
+		
+		// Actual crowd
+		int n <- length(nearby);
+		
+		// Difference (positive or negative)
+		float diff <- (n - preferred) / 6.0;
+		
+		// Apply effect symmetrically
+		float delta <- 0.04 * diff;
+		
+		do apply_happiness_delta(delta);
 	}
 	
 	
@@ -1189,14 +1231,14 @@ species GuestMusicFan parent: GuestBase {
     // HAPPINESS UPDATE
     // ============================================================
 
-    reflex adjust_happiness when: current_place != nil {
-
-        // Simple baseline: being at any place increases happiness a bit.
-        // (You can later refine: bigger boost at concert/club, etc.)
-        happiness <- happiness + 0.03;
-
-        // Always clamp happiness to [0, 1] every cycle.
-        happiness <- max(0.0, min(1.0, happiness));
+    reflex adjust_happiness when: current_place != nil and cycle mod 3 = 0 {
+		float delta <- 0.01;
+		
+		if (current_place.kind = "concert" or current_place.kind = "club") {
+		    delta <- delta + 0.02;
+		}
+		
+		do apply_happiness_delta(delta);
     }
 
     // ============================================================
@@ -1250,7 +1292,7 @@ species GuestMusicFan parent: GuestBase {
             + " | myGenre=" + favorite_genre
         );
 
-        // Optional: happiness boost if genres match.
+        // happiness boost if genres match.
         if (other_genre = favorite_genre) {
             happiness <- happiness + 0.02;
 
@@ -1258,6 +1300,15 @@ species GuestMusicFan parent: GuestBase {
             happiness <- max(0.0, min(1.0, happiness));
 
             do log(LOG_LEVEL_INFO, guestId, "GENRE_MATCH_BONUS (+0.02)");
+        }
+        else {
+        	// happiness decreases if genres do not match
+        	happiness <- happiness - 0.02;
+
+            // Clamp after bonus too (important, otherwise happiness can exceed 1.0).
+            happiness <- max(0.0, min(1.0, happiness));
+
+            do log(LOG_LEVEL_INFO, guestId, "GENRE_NOT_MATCH_MINUS (-0.02)");
         }
 
        
@@ -1475,9 +1526,22 @@ species GuestFoodie parent: GuestBase {
 	}
     
     
-    reflex adjust_happiness {
-		// TODO
-    }
+    reflex adjust_happiness
+	when: current_place != nil and cycle mod 5 = 0 {
+	
+	    float delta <- 0.0;
+	
+	    // Likes food places
+	    if (current_place.kind = "restaurant" or current_place.kind = "cafe" or current_place.kind = "bar") {
+	        delta <- delta + 0.02;
+	    }
+	
+	    // Likes sharing food with people
+	    int n <- length(get_nearby_guests(SOCIAL_DENSITY_RADIUS));
+	    delta <- delta + 0.02 * min(1.0, n / 5.0);
+	
+	    do apply_happiness_delta(delta);
+	}
 
 	reflex handle_requests when: !empty(requests) {
 
@@ -1629,9 +1693,23 @@ species GuestVeganActivist parent: GuestBase {
 	
 	    
     
-    reflex adjust_happiness {
-    	// TODO
-    }
+    reflex adjust_happiness
+	when: current_place != nil and cycle mod 5 = 0 {
+	
+	    float delta <- 0.0;
+	
+	    // Vegan likes restaurants only if vegan options believed available
+	    if (current_place.kind = "restaurant") {
+	        delta <- delta + (believes_vegan_available ? 0.04 : -0.04) * conviction;
+	    }
+	
+	    // Dislikes crowds if low tolerance
+	    int n <- length(get_nearby_guests(SOCIAL_DENSITY_RADIUS));
+	    float crowd_penalty <- max(0.0, n - 3) / 6.0;
+	    delta <- delta - crowd_penalty * (1.0 - tolerance) * 0.05;
+	
+	    do apply_happiness_delta(delta);
+	}
 
     init {
         sociability <- rnd(0.3, 0.6);
@@ -1794,18 +1872,4 @@ experiment NightlifeGUI type: gui {
     }
 }
 
-
-
-// TODO:
-// party guest inviting others to groups
-
-// music fan asking other music fans which genre they like
-
-// foodie sharing food with others
-
-// vegan activist asking restaurant if they have vegan food
-// vegan activist asking asking other which food they are having
-//   tell others off if they are eating meat
-
-// reinforcement learning
 
